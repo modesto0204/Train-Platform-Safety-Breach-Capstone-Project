@@ -1,0 +1,267 @@
+@font-face {
+    font-family: 'Agrandir';
+    src: url('assets/fonts/Agrandir-GrandHeavy.otf') format('opentype');
+    font-weight: 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Agrandir Regular';
+    src: url('assets/fonts/Agrandir-Regular.otf') format('opentype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Archivo';
+    src: url('assets/fonts/ArchivoBlack-Regular.ttf') format('opentype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Opensauce';
+    src: url('assets/fonts/open-sauce.one-semibold.ttf') format('opentype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.faq-container {
+    height: 100vh;
+    background-image: url('assets/icons/faq&help_bg.png');
+    display: flex;
+    flex-direction: column;
+}
+
+/* Navigation Header */
+.faq-nav-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    padding: 20px 20px 0px;
+}
+
+.faq-nav-btn {
+    font-family: 'Agrandir', 'Arial', sans-serif;
+    font-weight: 900;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 18px;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    padding: 12px 24px;
+    border-radius: 50px;
+    text-transform: uppercase;
+    backdrop-filter: blur(10px);
+    border-bottom-left-radius: 0px;
+    border-bottom-right-radius: 0px;
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+}
+
+.faq-nav-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.02);
+}
+
+.faq-nav-btn.active {
+    background: #b9d7f3; /* Light blue background for active state */
+    color: white;
+    border-bottom-left-radius: 0px;
+    border-bottom-right-radius: 0px;
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+}
+
+.nav-icon {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
+/* Main Content */
+.faq-main-content {
+    flex: 1;
+    padding: 0 20px 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-y: auto;
+}
+
+.faq-title-wrapper {
+    background-color: #b9d7f3;
+    padding: 12px 20px 8px;
+    width: calc(100% + 40px); /* Add back the parent's left+right padding */
+    margin-left: -20px; /* Negative margin equal to parent's left padding */
+    margin-right: -20px; /* Negative margin equal to parent's right padding */
+    margin-bottom: 20px;
+}
+
+.faq-title {
+    font-family: 'Archivo', 'Arial', sans-serif;
+    font-weight: 900;
+    font-size: 48px;
+    color: white;
+    text-align: center;
+    margin-bottom: 10px;
+    letter-spacing: 2px;
+}
+
+/* FAQ Items Container */
+.faq-items-container {
+    width: 100%;
+    max-width: 700px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px; /* Reduced from 20px */
+}
+
+/* FAQ Item */
+.faq-item {
+    border-radius: 15px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.faq-item:nth-child(odd) {
+    background: #a4b9d8;
+}
+
+.faq-item:nth-child(even) {
+    background: #7796c5;
+}
+
+.faq-item.expanded {
+    /* Remove the background color change on expand to maintain the alternating colors */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* FAQ Question */
+.faq-question {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 25px 30px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.faq-question:hover {
+    /* You can add a subtle effect instead */
+    filter: brightness(1.05);
+}
+
+.faq-question span {
+    font-family: 'Opensauce', 'Arial', sans-serif;
+    font-weight: 900;
+    font-size: 23px;
+    color: white;
+    flex: 1;
+    padding-right: 20px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); /* Add subtle shadow for better readability */
+    line-height: 1.3; /* Add line height for better multi-line spacing */
+    max-width: 500px;
+}
+
+.faq-toggle-icon {
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
+    transition: transform 0.3s ease;
+}
+
+/* FAQ Answer */
+.faq-answer {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+.faq-item.expanded .faq-answer {
+    max-height: 300px;
+}
+
+.faq-answer p {
+    font-family: 'Opensauce', 'Arial', sans-serif;
+    font-weight: 400;
+    font-size: 16px;
+    color: white; /* Changed to white for better contrast */
+    line-height: 1.6;
+    padding: 0 30px 25px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); /* Add subtle shadow */
+    text-align: justify;
+}
+
+/* Scrollbar Styling */
+.faq-main-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.faq-main-content::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.faq-main-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+}
+
+.faq-main-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .faq-nav-header {
+        padding: 20px 10px;
+        gap: 10px;
+    }
+    
+    .faq-nav-btn {
+        font-size: 14px;
+        padding: 10px 16px;
+    }
+    
+    .nav-icon {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .faq-title {
+        font-size: 32px;
+        margin-bottom: 30px;
+    }
+    
+    .faq-question span {
+        font-size: 18px;
+    }
+    
+    .faq-answer p {
+        font-size: 14px;
+    }
+}
