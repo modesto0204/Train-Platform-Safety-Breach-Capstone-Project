@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ - Platform Safety Detection System</title>
+    <link rel="stylesheet" href="faq-styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="faq-container">
+        <!-- Navigation Header -->
+        <div class="faq-nav-header">
+            <button class="faq-nav-btn active">
+                <img src="assets/icons/faq_icon.png" alt="FAQ" class="nav-icon">
+                <span>FAQ</span>
+            </button>
+            
+            <button class="faq-nav-btn" onclick="goToDashboard()">
+                <img src="assets/icons/dashboard_icon.png" alt="Dashboard" class="nav-icon">
+                <span>DASHBOARD</span>
+            </button>
+            
+            <button class="faq-nav-btn" onclick="showHelp()">
+                <img src="assets/icons/help_icon.png" alt="Help" class="nav-icon">
+                <span>HELP</span>
+            </button>
+        </div>
+
+        <!-- Main Content -->
+        <div class="faq-main-content">
+            <div class="faq-title-wrapper">
+                <h1 class="faq-title">FREQUENTLY ASKED QUESTIONS</h1>
+            </div>
+            
+            <div class="faq-items-container">
+                <!-- FAQ Item 1 -->
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFAQ(this)">
+                        <span>What is the main purpose of this system?</span>
+                        <img src="assets/icons/faqplus_icon.png" alt="Expand" class="faq-toggle-icon">
+                    </div>
+                    <div class="faq-answer">
+                        <p>The system is designed to enhance passenger safety on train platforms by using AI-based object detection and spatial logic to identify real-time breaches in designated safety zones such as the yellow line and platform edge.</p>
+                    </div>
+                </div>
+
+                <!-- FAQ Item 2 -->
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFAQ(this)">
+                        <span>How does the system detect danger zone breaches?</span>
+                        <img src="assets/icons/faqplus_icon.png" alt="Expand" class="faq-toggle-icon">
+                    </div>
+                    <div class="faq-answer">
+                        <p>The system uses advanced computer vision and AI algorithms to continuously monitor video feeds from platform cameras. It identifies when passengers cross designated safety boundaries like the yellow warning line or get too close to the platform edge, triggering immediate alerts.</p>
+                    </div>
+                </div>
+
+                <!-- FAQ Item 3 -->
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFAQ(this)">
+                        <span>What kind of alerts does the system provide during a breach?</span>
+                        <img src="assets/icons/faqplus_icon.png" alt="Expand" class="faq-toggle-icon">
+                    </div>
+                    <div class="faq-answer">
+                        <p>The system provides visual and audible alerts including: color-coded status indicators (yellow for warning zones, red for critical breaches), real-time notifications to platform operators, automated announcements to passengers, and detailed breach logs for review and analysis.</p>
+                    </div>
+                </div>
+
+                <!-- FAQ Item 4 -->
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFAQ(this)">
+                        <span>Is internet access required for the system to work in real-time?</span>
+                        <img src="assets/icons/faqplus_icon.png" alt="Expand" class="faq-toggle-icon">
+                    </div>
+                    <div class="faq-answer">
+                        <p>The core detection and alert functions operate locally without requiring internet access, ensuring uninterrupted safety monitoring. However, internet connectivity enables additional features like cloud backup, remote monitoring, system updates, and integration with central control systems.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="faq-script.js"></script>
+</body>
+</html>
