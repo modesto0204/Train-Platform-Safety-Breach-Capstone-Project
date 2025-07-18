@@ -96,14 +96,7 @@ async function fetchStats() {
         const response = await fetch(`${API_BASE_URL}/stats`);
         const data = await response.json();
         
-        // Update statistics display for zone-based breaches
-        stats.yellowLineBreach = data.breach_counts?.warning || 0;
-        stats.platformEdgeBreach = data.breach_counts?.danger || 0;
-        stats.passengerCount = data.total_passengers || 0;
-        
-        updateStatistics();
-        
-        // Update breach counts for chart
+        // Only update chart data, not the live display
         totalBreachCounts.yellow = data.breach_counts?.warning || 0;
         totalBreachCounts.red = data.breach_counts?.danger || 0;
         updateBreachChart();
@@ -113,6 +106,12 @@ async function fetchStats() {
     }
 }
 
+let currentFrameStats = {
+    yellowBreaches: 0,
+    redBreaches: 0,
+    passengers: 0
+};
+
 let currentDetections = [];
 
 // Update the processDetectionResults function to actually draw boxes
@@ -121,6 +120,12 @@ function processDetectionResults(result) {
     
     currentDetections = result.detections || [];
     
+    currentFrameStats = {
+        yellowBreaches: 0,
+        redBreaches: 0,
+        passengers: 0
+    };
+
     // Get current scaling
     const scaling = window.videoScaling || { scaleX: 1, scaleY: 1 };
     
@@ -145,10 +150,12 @@ function processDetectionResults(result) {
             if (detection.breach_type === 'danger') {
                 boxColor = '#ff4444';
                 statusLabel = 'DANGER';
+                currentFrameStats.redBreaches++;
                 hasDangerBreach = true;
             } else if (detection.breach_type === 'warning') {
                 boxColor = '#ffd700';
                 statusLabel = 'WARNING';
+                currentFrameStats.yellowBreaches++;
                 hasWarningBreach = true;
             }
             
@@ -157,37 +164,92 @@ function processDetectionResults(result) {
             ctx.strokeStyle = boxColor;
             ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
             
-            // Draw label
+            // Create label with track ID and breach count
+            const trackLabel = detection.track_id ? `Person #${detection.track_id}` : 'Person';
             const confidenceText = `${Math.round(detection.confidence * 100)}%`;
-            const fullLabel = `${statusLabel} (${confidenceText})`;
             
-            ctx.font = 'bold 16px Arial';
+            // Add breach count if available
+            let breachInfo = '';
+            if (detection.breach_count) {
+                const warningCount = detection.breach_count.warning || 0;
+                const dangerCount = detection.breach_count.danger || 0;
+                if (warningCount > 0 || dangerCount > 0) {
+                    breachInfo = ` [W:${warningCount} D:${dangerCount}]`;
+                }
+            }
+            
+            // Add time in zone if currently breaching
+            let timeInfo = '';
+            if (detection.time_in_zone && detection.breach_type) {
+                timeInfo = ` (${detection.time_in_zone}s)`;
+            }
+            
+            const fullLabel = `${trackLabel} - ${statusLabel} ${confidenceText}${breachInfo}${timeInfo}`;
+            
+            // Adjust font size based on label length
+            const fontSize = fullLabel.length > 40 ? 12 : 14;
+            ctx.font = `bold ${fontSize}px Arial`;
             const metrics = ctx.measureText(fullLabel);
             
+            // Draw label background
+            const labelHeight = fontSize + 10;
             ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-            ctx.fillRect(x1, y1 - 25, metrics.width + 10, 25);
+            ctx.fillRect(x1, y1 - labelHeight - 5, metrics.width + 10, labelHeight);
             
+            // Draw label text
             ctx.fillStyle = boxColor;
             ctx.fillText(fullLabel, x1 + 5, y1 - 8);
             
-            // Draw center point if available
+            // Draw foot position if available
             if (detection.foot_position) {
-            const footX = detection.foot_position[0] * scaling.scaleX;
-            const footY = detection.foot_position[1] * scaling.scaleY;
-            ctx.fillStyle = boxColor;
-            ctx.beginPath();
-            ctx.arc(footX, footY, 5, 0, 2 * Math.PI);
-            ctx.fill();
+                const footX = detection.foot_position[0] * scaling.scaleX;
+                const footY = detection.foot_position[1] * scaling.scaleY;
+                
+                // Draw foot marker circle
+                ctx.fillStyle = boxColor;
+                ctx.beginPath();
+                ctx.arc(footX, footY, 5, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // Draw foot position line
+                ctx.strokeStyle = boxColor;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(footX - 10, footY);
+                ctx.lineTo(footX + 10, footY);
+                ctx.stroke();
+                
+                // Add small "F" label for foot
+                ctx.font = 'bold 10px Arial';
+                ctx.fillStyle = 'white';
+                ctx.fillText('F', footX - 3, footY + 3);
+            }
             
-            // Optional: Draw a small line to indicate it's the foot position
-            ctx.strokeStyle = boxColor;
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(footX - 10, footY);
-            ctx.lineTo(footX + 10, footY);
-            ctx.stroke();
-        }
+            // Draw track ID number in center of box (optional)
+            if (detection.track_id) {
+                const centerX = (x1 + x2) / 2;
+                const centerY = (y1 + y2) / 2;
+                
+                // Draw ID background circle
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, 20, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // Draw ID number
+                ctx.font = 'bold 16px Arial';
+                ctx.fillStyle = 'white';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(detection.track_id.toString(), centerX, centerY);
+                
+                // Reset text alignment
+                ctx.textAlign = 'start';
+                ctx.textBaseline = 'alphabetic';
+            }
         });
+
+        currentFrameStats.passengers = currentDetections.length;
     }
     
     // Draw zones if enabled
@@ -218,8 +280,48 @@ function processDetectionResults(result) {
         }
     }
     
-    stats.passengerCount = currentDetections.filter(d => d.label === 'person').length;
+    // Update passenger count and statistics
+    stats.yellowLineBreach = currentFrameStats.yellowBreaches;
+    stats.platformEdgeBreach = currentFrameStats.redBreaches;
+    stats.passengerCount = currentFrameStats.passengers;
     updateStatistics();
+    
+    // Update breach log if new breaches detected
+    if (hasWarningBreach || hasDangerBreach) {
+        // Add entries to breach log for tracked persons
+        currentDetections.forEach(detection => {
+            if (detection.breach_type && detection.track_id) {
+                // Check if this is a new breach (you might want to track this)
+                const currentTime = new Date();
+                const timeString = currentTime.toTimeString().split(' ')[0];
+                const location = detection.breach_type === 'danger' ? 'Platform Edge' : 'Yellow Line';
+                
+                // You can add logic here to prevent duplicate entries
+                // For now, we'll rely on the backend to handle new breach detection
+            }
+        });
+    }
+}
+
+async function resetTrackers(camera = null) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/reset_trackers`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                camera: camera || currentCamera
+            })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            console.log('Trackers reset successfully');
+        }
+    } catch (error) {
+        console.error('Error resetting trackers:', error);
+    }
 }
 
 function createZoneCanvas() {
@@ -478,6 +580,17 @@ function stopDetection() {
     }
 }
 
+let lastSeekTime = 0;
+videoPlayer.addEventListener('seeking', function() {
+    console.log('Video seeking detected');
+    // Reset trackers when user seeks more than 2 seconds
+    const currentTime = videoPlayer.currentTime;
+    if (Math.abs(currentTime - lastSeekTime) > 2) {
+        resetTrackers(currentCamera);
+    }
+    lastSeekTime = currentTime;
+});
+
 // Modify video player event handlers
 videoPlayer.addEventListener('play', () => {
     console.log('Video playing, starting detection...');
@@ -644,6 +757,7 @@ function loadVideo(file) {
     videoPlayer.src = url;
     uploadArea.classList.add('hidden');
     
+    resetTrackers('all');
     // Add a class to the container to indicate video is loaded
     document.querySelector('.video-container').classList.add('has-video');
 }
@@ -658,6 +772,8 @@ function clearVideo() {
     videoPlayer.src = '';
     showUploadArea();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    resetTrackers('all');
     
     // Remove clear button
     const clearBtn = document.querySelector('.clear-video-btn');
@@ -745,6 +861,8 @@ function createCameraSelector() {
         currentCamera = e.target.value;
         console.log('Camera changed to:', currentCamera);
         
+        await resetTrackers(currentCamera);
+
         // Reset zone data when camera changes
         zoneData = null;
         if (showZones) {
@@ -761,6 +879,7 @@ function createCameraSelector() {
 
 // Call this when video loads
 videoPlayer.addEventListener('loadeddata', function() {
+    resetTrackers(currentCamera);
     const existingClearBtn = document.querySelector('.clear-video-btn');
     const existingCameraSelector = document.querySelector('.camera-selector');
     const existingZoneBtn = document.querySelector('.zone-viz-btn');
@@ -1059,6 +1178,51 @@ async function logBreachToServer(type, location) {
         });
     } catch (error) {
         console.error('Error logging breach:', error);
+    }
+}
+
+async function resetSystem() {
+    try {
+        // Reset stats first
+        await fetch(`${API_BASE_URL}/stats/reset`, {
+            method: 'POST'
+        });
+        
+        // Then reset trackers with counter reset
+        await fetch(`${API_BASE_URL}/reset_trackers`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                camera: 'all',
+                reset_counter: true
+            })
+        });
+        
+        // Clear local stats
+        stats = {
+            yellowLineBreach: 0,
+            platformEdgeBreach: 0,
+            passengerCount: 0
+        };
+        
+        totalBreachCounts = {
+            yellow: 0,
+            red: 0
+        };
+        
+        // Clear breach log
+        loadExistingBreachLog();
+        
+        // Update displays
+        updateStatistics();
+        updateBreachChart();
+        
+        console.log('System reset complete');
+        
+    } catch (error) {
+        console.error('Error resetting system:', error);
     }
 }
 
