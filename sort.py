@@ -56,20 +56,32 @@ class KalmanBoxTracker(object):
                               [0,0,1,0,0,0,0],
                               [0,0,0,1,0,0,0]])
         
-        self.kf.R[2:, 2:] *= 10.
-        self.kf.P[4:, 4:] *= 1000.
-        self.kf.P *= 10.
-        self.kf.Q[-1, -1] *= 0.01
-        self.kf.Q[4:, 4:] *= 0.01
+        self.kf.R[2:, 2:] *= 5.  # Was 10
+        self.kf.P[4:, 4:] *= 500.  # Was 1000
+        self.kf.P *= 5.  # Was 10
+        self.kf.Q[-1, -1] *= 0.05  # Was 0.01
+        self.kf.Q[4:, 4:] *= 0.05  # Was 0.01
         
         self.kf.x[:4] = self.convert_bbox_to_z(bbox)
         self.time_since_update = 0
-        self.id = KalmanBoxTracker.count
-        KalmanBoxTracker.count += 1
+        # Don't assign ID here anymore
+        # self.id = KalmanBoxTracker.count
+        # KalmanBoxTracker.count += 1
         self.history = []
         self.hits = 0
         self.hit_streak = 0
         self.age = 0
+        
+        # Instead use temporary ID
+        self.id = -1  # Temporary ID
+        self.confirmed = False
+    
+    def confirm_track(self):
+        """Assign permanent ID only when track is confirmed"""
+        if not self.confirmed and self.id == -1:
+            self.id = KalmanBoxTracker.count
+            KalmanBoxTracker.count += 1
+            self.confirmed = True
     
     def update(self, bbox):
         """
@@ -178,7 +190,16 @@ class Sort(object):
         for trk in reversed(self.trackers):
             d = trk.get_state()[0]
             if (trk.time_since_update < 1) and (trk.hit_streak >= self.min_hits or self.frame_count <= self.min_hits):
-                ret.append(np.concatenate((d, [trk.id+1])).reshape(1, -1))  # +1 as MOT benchmark requires positive
+                # Confirm track if not already confirmed
+                if not hasattr(trk, 'confirmed') or not trk.confirmed:
+                    if hasattr(trk, 'confirm_track'):
+                        trk.confirm_track()
+                    else:
+                        # Fallback if confirm_track method doesn't exist
+                        trk.confirmed = True
+                
+                if trk.id >= 0:  # Only return tracks with valid IDs
+                    ret.append(np.concatenate((d, [trk.id+1])).reshape(1, -1))
             i -= 1
             # Remove dead tracklet
             if(trk.time_since_update > self.max_age):
