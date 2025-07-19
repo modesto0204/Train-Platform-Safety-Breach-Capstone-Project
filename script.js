@@ -31,6 +31,18 @@ let zoneData = null;
 
 let isTransitioning = false;
 
+let breachTimerStartTime = null;
+let breachTimerInterval = null;
+let currentBreachState = 'safe';
+
+let cumulativeBreachCounts = {
+    yellow: 0,
+    red: 0
+};
+
+// Track which persons have been logged to avoid duplicates
+let breachTracking = {};
+
 document.addEventListener('DOMContentLoaded', async function() {
     initializeChart();
     setupEventListeners();
@@ -129,6 +141,55 @@ let currentFrameStats = {
     redBreaches: 0,
     passengers: 0
 };
+
+function formatElapsedTime(milliseconds) {
+    const seconds = Math.floor(milliseconds / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    
+    if (minutes > 0) {
+        return `${minutes}m ${remainingSeconds}s`;
+    }
+    return `${seconds}s`;
+}
+
+function updateBreachTimerDisplay() {
+    const timestampEl = document.getElementById('timestamp');
+    
+    if (breachTimerStartTime && currentBreachState !== 'safe') {
+        const elapsed = Date.now() - breachTimerStartTime;
+        timestampEl.textContent = `${formatElapsedTime(elapsed)} in breach`;
+    } else {
+        // Show safe status when no breach
+        timestampEl.textContent = 'Safe';
+    }
+}
+
+// Add this function to start the timer display
+function startBreachTimerDisplay() {
+    // Clear any existing timer
+    if (breachTimerInterval) {
+        clearInterval(breachTimerInterval);
+    }
+    
+    // Set the start time
+    breachTimerStartTime = Date.now();
+    
+    // Update immediately
+    updateBreachTimerDisplay();
+    
+    // Update every second
+    breachTimerInterval = setInterval(updateBreachTimerDisplay, 1000);
+}
+
+// Add this function to stop the timer display
+function stopBreachTimerDisplay() {
+    if (breachTimerInterval) {
+        clearInterval(breachTimerInterval);
+        breachTimerInterval = null;
+    }
+    breachTimerStartTime = null;
+}
 
 let detectionBuffer = {};
 let BUFFER_SIZE = 3;
@@ -265,26 +326,18 @@ function processDetectionResults(result) {
         return;
     }
     
-    console.log('Processing detections:', result.detections);
-    
     currentDetections = smoothDetections(result.detections || []);
     
     if (currentDetections.length === 0) {
-        const statusBar = document.getElementById('statusBar');
-        if (statusBar.classList.contains('yellow-breach') || 
-            statusBar.classList.contains('red-breach') || 
-            statusBar.classList.contains('both-breach')) {
+        if (currentBreachState !== 'safe') {
             clearBreach();
         }
-        
-        // Clear the canvas
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        // Update passenger count to 0
         stats.passengerCount = 0;
+        stats.yellowLineBreach = 0;  // Reset to 0 when no detections
+        stats.platformEdgeBreach = 0;
         updateStatistics();
-        
-        return; // Exit early since there's nothing to process
+        return;
     }
     
     currentFrameStats = {
@@ -293,77 +346,99 @@ function processDetectionResults(result) {
         passengers: 0
     };
 
-    // Get current scaling
     const scaling = window.videoScaling || { scaleX: 1, scaleY: 1 };
-    
-    // Clear the canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
     let hasWarningBreach = false;
     let hasDangerBreach = false;
     
+    // Track current breaching persons
+    let currentBreachingPersons = new Set();
+    
     if (currentDetections.length > 0) {
         currentDetections.forEach(detection => {
-            // Scale coordinates from natural size to display size
             const x1 = detection.x1 * scaling.scaleX;
             const y1 = detection.y1 * scaling.scaleY;
             const x2 = detection.x2 * scaling.scaleX;
             const y2 = detection.y2 * scaling.scaleY;
             
-            // Determine color and label
             let boxColor = '#00ff00';
             let statusLabel = 'SAFE';
             
             if (detection.breach_type === 'danger') {
                 boxColor = '#ff4444';
                 statusLabel = 'DANGER';
-                currentFrameStats.redBreaches++;
+                currentFrameStats.redBreaches++;  // This person is currently in red zone
                 hasDangerBreach = true;
+                
+                // Track for logging only
+                if (!breachTracking[detection.track_id]) {
+                    breachTracking[detection.track_id] = {
+                        inYellowZone: false,
+                        inRedZone: false
+                    };
+                }
+                
+                if (!breachTracking[detection.track_id].inRedZone) {
+                    breachTracking[detection.track_id].inRedZone = true;
+                    
+                    // Log the breach event
+                    const currentTime = new Date();
+                    const timeString = currentTime.toTimeString().split(' ')[0];
+                    addNewBreachEntry('red', timeString, 'Platform Edge');
+                    
+                    // Update cumulative for chart/log history
+                    cumulativeBreachCounts.red++;
+                }
+                
             } else if (detection.breach_type === 'warning') {
                 boxColor = '#ffd700';
                 statusLabel = 'WARNING';
-                currentFrameStats.yellowBreaches++;
+                currentFrameStats.yellowBreaches++;  // This person is currently in yellow zone
                 hasWarningBreach = true;
+                
+                if (!breachTracking[detection.track_id]) {
+                    breachTracking[detection.track_id] = {
+                        inYellowZone: false,
+                        inRedZone: false
+                    };
+                }
+                
+                if (!breachTracking[detection.track_id].inYellowZone) {
+                    breachTracking[detection.track_id].inYellowZone = true;
+                    
+                    // Log the breach event
+                    const currentTime = new Date();
+                    const timeString = currentTime.toTimeString().split(' ')[0];
+                    addNewBreachEntry('yellow', timeString, 'Yellow Line');
+                    
+                    // Update cumulative for chart/log history
+                    cumulativeBreachCounts.yellow++;
+                }
+            } else {
+                // Person is in safe zone - reset their breach status
+                if (breachTracking[detection.track_id]) {
+                    breachTracking[detection.track_id].inYellowZone = false;
+                    breachTracking[detection.track_id].inRedZone = false;
+                }
             }
             
-            // Draw bounding box
+            // Draw bounding box code...
             ctx.lineWidth = 3;
             ctx.strokeStyle = boxColor;
             ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
             
-            // Create label with track ID and breach count
             const trackLabel = detection.track_id ? `Person #${detection.track_id}` : 'Person';
-            const confidenceText = `${Math.round(detection.confidence * 100)}%`;
-            
-            // Add breach count if available
-            let breachInfo = '';
-            if (detection.breach_count) {
-                const warningCount = detection.breach_count.warning || 0;
-                const dangerCount = detection.breach_count.danger || 0;
-                if (warningCount > 0 || dangerCount > 0) {
-                    breachInfo = ` [W:${warningCount} D:${dangerCount}]`;
-                }
-            }
-            
-            // Add time in zone if currently breaching
-            let timeInfo = '';
-            if (detection.time_in_zone && detection.breach_type) {
-                timeInfo = ` (${detection.time_in_zone}s)`;
-            }
-            
             const fullLabel = `${trackLabel} - ${statusLabel}`;
             
-            // Adjust font size based on label length
             const fontSize = fullLabel.length > 40 ? 12 : 14;
             ctx.font = `bold ${fontSize}px Arial`;
             const metrics = ctx.measureText(fullLabel);
             
-            // Draw label background
             const labelHeight = fontSize + 10;
             ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
             ctx.fillRect(x1, y1 - labelHeight - 5, metrics.width + 10, labelHeight);
             
-            // Draw label text
             ctx.fillStyle = boxColor;
             ctx.fillText(fullLabel, x1 + 5, y1 - 8);
             
@@ -372,13 +447,11 @@ function processDetectionResults(result) {
                 const footX = detection.foot_position[0] * scaling.scaleX;
                 const footY = detection.foot_position[1] * scaling.scaleY;
                 
-                // Draw foot marker circle
                 ctx.fillStyle = boxColor;
                 ctx.beginPath();
                 ctx.arc(footX, footY, 5, 0, 2 * Math.PI);
                 ctx.fill();
                 
-                // Draw foot position line
                 ctx.strokeStyle = boxColor;
                 ctx.lineWidth = 2;
                 ctx.beginPath();
@@ -386,7 +459,6 @@ function processDetectionResults(result) {
                 ctx.lineTo(footX + 10, footY);
                 ctx.stroke();
                 
-                // Add small "F" label for foot
                 ctx.font = 'bold 10px Arial';
                 ctx.fillStyle = 'white';
                 ctx.fillText('F', footX - 3, footY + 3);
@@ -395,6 +467,20 @@ function processDetectionResults(result) {
 
         currentFrameStats.passengers = currentDetections.length;
     }
+    
+    // Clean up tracking for persons no longer in breach zones
+    Object.keys(breachTracking).forEach(trackId => {
+        const trackIdNum = parseInt(trackId);
+        const personDetection = currentDetections.find(d => d.track_id === trackIdNum);
+        
+        if (!personDetection || !personDetection.breach_type) {
+            // Person is no longer in a breach zone
+            if (breachTracking[trackId]) {
+                breachTracking[trackId].inYellowZone = false;
+                breachTracking[trackId].inRedZone = false;
+            }
+        }
+    });
     
     // Draw zones if enabled
     if (typeof drawZones === 'function') {
@@ -405,47 +491,37 @@ function processDetectionResults(result) {
     const statusBar = document.getElementById('statusBar');
     
     if (hasDangerBreach && hasWarningBreach) {
-        if (!statusBar.classList.contains('both-breach')) {
+        if (currentBreachState !== 'both') {
             simulateBothBreaches();
         }
     } else if (hasDangerBreach) {
-        if (!statusBar.classList.contains('red-breach')) {
+        if (currentBreachState !== 'red') {
             simulatePlatformEdgeBreach();
         }
     } else if (hasWarningBreach) {
-        if (!statusBar.classList.contains('yellow-breach')) {
+        if (currentBreachState !== 'yellow') {
             simulateYellowLineBreach();
         }
     } else {
-        // No breaches detected (but people are present)
-        if (statusBar.classList.contains('yellow-breach') || 
-            statusBar.classList.contains('red-breach') || 
-            statusBar.classList.contains('both-breach')) {
+        if (currentBreachState !== 'safe') {
             clearBreach();
         }
     }
     
-    // Update passenger count and statistics
+    // IMPORTANT: Update statistics with CURRENT frame counts only
     stats.yellowLineBreach = currentFrameStats.yellowBreaches;
     stats.platformEdgeBreach = currentFrameStats.redBreaches;
     stats.passengerCount = currentFrameStats.passengers;
-    updateStatistics();
     
-    // Update breach log if new breaches detected
-    if (hasWarningBreach || hasDangerBreach) {
-        // Add entries to breach log for tracked persons
-        currentDetections.forEach(detection => {
-            if (detection.breach_type && detection.track_id) {
-                // Check if this is a new breach (you might want to track this)
-                const currentTime = new Date();
-                const timeString = currentTime.toTimeString().split(' ')[0];
-                const location = detection.breach_type === 'danger' ? 'Platform Edge' : 'Yellow Line';
-                
-                // You can add logic here to prevent duplicate entries
-                // For now, we'll rely on the backend to handle new breach detection
-            }
-        });
-    }
+    // Force update the display immediately
+    document.getElementById('yellowLineBreach').textContent = currentFrameStats.yellowBreaches;
+    document.getElementById('platformEdgeBreach').textContent = currentFrameStats.redBreaches;
+    document.getElementById('passengerCount').textContent = currentFrameStats.passengers;
+    
+    // Update chart with cumulative data
+    totalBreachCounts.yellow = cumulativeBreachCounts.yellow;
+    totalBreachCounts.red = cumulativeBreachCounts.red;
+    updateBreachChart();
 }
 
 async function resetTrackers(camera = null) {
@@ -681,10 +757,15 @@ async function detectFrame() {
     isProcessing = true;
     
     try {
+        // Check again before processing
+        if (isTransitioning) {
+            isProcessing = false;
+            return;
+        }
+        
         const tempCanvas = document.createElement('canvas');
         const tempCtx = tempCanvas.getContext('2d');
         
-        // Use natural video dimensions for detection
         tempCanvas.width = videoPlayer.videoWidth;
         tempCanvas.height = videoPlayer.videoHeight;
         tempCtx.drawImage(videoPlayer, 0, 0, videoPlayer.videoWidth, videoPlayer.videoHeight);
@@ -692,6 +773,12 @@ async function detectFrame() {
         const blob = await new Promise(resolve => 
             tempCanvas.toBlob(resolve, 'image/jpeg', 0.8)
         );
+        
+        // Check if we're still supposed to be processing
+        if (isTransitioning) {
+            isProcessing = false;
+            return;
+        }
         
         const formData = new FormData();
         formData.append('image', blob, 'frame.jpg');
@@ -704,12 +791,14 @@ async function detectFrame() {
         
         const result = await response.json();
         
-        if (result.success) {
-            // Don't scale here - let processDetectionResults handle it
+        // Final check before updating UI
+        if (result.success && !isTransitioning) {
             processDetectionResults(result);
         }
     } catch (error) {
-        console.error('Detection error:', error);
+        if (!isTransitioning) {
+            console.error('Detection error:', error);
+        }
     } finally {
         isProcessing = false;
     }
@@ -733,6 +822,9 @@ function stopDetection() {
         clearInterval(detectionInterval);
         detectionInterval = null;
     }
+    
+    // Also set processing flag to false
+    isProcessing = false;
 }
 
 let lastSeekTime = 0;
@@ -849,6 +941,9 @@ function handleFileSelect(e) {
             processImage(file);
         }
     }
+    
+    // Reset the input value after processing
+    e.target.value = '';
 }
 
 function updateStatistics() {
@@ -950,75 +1045,220 @@ function handleFileSelect(e) {
 }
 
 function loadVideo(file) {
+    // Revoke any existing object URL to prevent memory leaks
+    if (videoPlayer.src && videoPlayer.src.startsWith('blob:')) {
+        URL.revokeObjectURL(videoPlayer.src);
+    }
+    
     const url = URL.createObjectURL(file);
     videoPlayer.src = url;
+    
+    // Hide upload area
     uploadArea.classList.add('hidden');
     
+    // Reset trackers
     resetTrackers('all');
-    // Add a class to the container to indicate video is loaded
+    
+    // Add class to container
     document.querySelector('.video-container').classList.add('has-video');
+    
+    // Force video to load
+    videoPlayer.load();
 }
 
 function showUploadArea() {
     uploadArea.classList.remove('hidden');
-    document.querySelector('.video-container').classList.remove('has-video');
+    
+    // Ensure upload area is clickable
+    uploadArea.style.pointerEvents = 'auto';
+    uploadArea.style.display = 'flex';
+    
+    // Ensure video container is clean
+    const videoContainer = document.querySelector('.video-container');
+    videoContainer.classList.remove('has-video');
+    videoContainer.classList.remove('playing');
+    
+    // Reset video element
+    videoPlayer.style.display = '';
+    
+    // Reset file input
+    const videoInput = document.getElementById('videoInput');
+    if (videoInput) {
+        videoInput.value = '';
+    }
 }
 
-function clearVideo() {
+async function clearVideo() {
+    // Set a flag to prevent any ongoing detections from updating the UI
+    isTransitioning = true;
+    
+    // Stop detection and wait a moment for any in-flight requests to complete
+    stopDetection();
+    isProcessing = false; // Force stop processing flag
+    
+    // Pause video immediately
     videoPlayer.pause();
-    videoPlayer.src = '';
-    showUploadArea();
+    
+    // Wait for any pending detection to complete
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Clear all timers and intervals
+    if (breachTimerInterval) {
+        clearInterval(breachTimerInterval);
+        breachTimerInterval = null;
+    }
+    
+    // Clear all breach timers
+    clearAllBreachTimers();
+    
+    // Reset timer states
+    breachTimerStartTime = null;
+    safeTimerStartTime = Date.now();
+    currentBreachState = 'safe';
+
+    // Revoke existing object URL if any
+    if (videoPlayer.src && videoPlayer.src.startsWith('blob:')) {
+        URL.revokeObjectURL(videoPlayer.src);
+    }
+    
+    // Clear video source
+    videoPlayer.removeAttribute('src');
+    videoPlayer.load();
+    
+    // Clear all canvases immediately
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    resetTrackers('all');
-    
-    // Remove buttons and UI elements
-    const clearBtn = document.querySelector('.clear-video-btn');
-    if (clearBtn) clearBtn.remove();
-    
-    const cameraSelector = document.querySelector('.camera-selector');
-    if (cameraSelector) cameraSelector.remove();
-    
-    const zoneBtn = document.querySelector('.zone-viz-btn');
-    if (zoneBtn) zoneBtn.remove();
+    canvas.width = canvas.width;
     
     // Clear zone canvas if it exists
     const zoneCanvas = document.getElementById('zoneCanvas');
     if (zoneCanvas) {
         const zoneCtx = zoneCanvas.getContext('2d');
         zoneCtx.clearRect(0, 0, zoneCanvas.width, zoneCanvas.height);
+        zoneCanvas.width = zoneCanvas.width;
     }
     
-    // Reset zone states
-    showZones = false;
-    zoneData = null;
+    // Force clear breach status
+    const statusBar = document.getElementById('statusBar');
+    const breachStatus = document.getElementById('breachStatus');
+    const alertStatusItem = document.getElementById('alertStatusItem');
+    const timestampEl = document.getElementById('timestamp');
     
-    // ADD THESE LINES TO CLEAR BREACH DATA:
-    // Reset breach counts
-    totalBreachCounts = {
+    // Remove all breach classes
+    statusBar.classList.remove('yellow-breach', 'red-breach', 'both-breach');
+    
+    // Restore safe status
+    breachStatus.innerHTML = `
+        <div class="icon-wrapper">
+            <img src="${ICONS.safe}" alt="Safe" class="status-icon-large safe-icon">
+        </div>
+        <span class="breach-text">No breach detected</span>
+    `;
+    
+    alertStatusItem.innerHTML = `
+        <div class="icon-wrapper">
+            <img src="${ICONS.alertDisabled}" alt="Alert Disabled" style="width: 24px; height: 24px; object-fit: contain;">
+        </div>
+        <span class="alert-text-disabled">Alert: Disabled</span>
+    `;
+    
+    // Update timestamp
+    timestampEl.textContent = 'Safe for: 0s';
+    
+    cumulativeBreachCounts = {
         yellow: 0,
         red: 0
     };
     
-    // Clear statistics
+    // Clear breach tracking
+    breachTracking = {};
+    
+    // Reset stats
     stats = {
         yellowLineBreach: 0,
         platformEdgeBreach: 0,
         passengerCount: 0
     };
     
-    // Update displays
-    updateStatistics();
-    updateBreachChart();
+    currentFrameStats = {
+        yellowBreaches: 0,
+        redBreaches: 0,
+        passengers: 0
+    };
+    
+    // Force update all stat displays
+    document.getElementById('yellowLineBreach').textContent = '0';
+    document.getElementById('platformEdgeBreach').textContent = '0';
+    document.getElementById('passengerCount').textContent = '0';
+    
+    // Reset breach counts
+    totalBreachCounts = {
+        yellow: 0,
+        red: 0
+    };
+    
+    // Update breach chart
+    if (breachChart) {
+        breachChart.data.datasets[0].data = [50, 50];
+        breachChart.update();
+        document.querySelector('.legend-item:nth-child(1) span:last-child').textContent = 'Yellow Line 0%';
+        document.querySelector('.legend-item:nth-child(2) span:last-child').textContent = 'Platform Edge 0%';
+        document.querySelector('.breach-breakdown-section').classList.add('no-data');
+    }
     
     // Clear breach log
-    loadExistingBreachLog();
+    const breachLog = document.getElementById('breachLog');
+    breachLog.innerHTML = '<div class="no-breaches">No breaches yet</div>';
     
-    // Clear breach status
-    clearBreach();
+    // Clear all detection-related data
+    currentDetections = [];
+    detectionBuffer = {};
     
-    // Stop detection
-    stopDetection();
+    // Reset trackers
+    await resetTrackers('all');
+    
+    // Reset zone states
+    showZones = false;
+    zoneData = null;
+    
+    // Remove UI buttons
+    const elementsToRemove = [
+        '.clear-video-btn',
+        '.camera-selector',
+        '.zone-viz-btn',
+        '.alarm-controls'
+    ];
+
+    const videoInput = document.getElementById('videoInput');
+    if (videoInput) {
+        videoInput.value = '';
+    }
+    
+    elementsToRemove.forEach(selector => {
+        const element = document.querySelector(selector);
+        if (element) element.remove();
+    });
+    
+    // Show upload area
+    showUploadArea();
+    
+    // Remove video loaded class
+    document.querySelector('.video-container').classList.remove('has-video');
+    document.querySelector('.video-container').classList.remove('playing');
+    
+    // Start safe timer
+    if (!breachTimerInterval) {
+        breachTimerInterval = setInterval(updateBreachTimerDisplay, 1000);
+    }
+    
+    // Reset the transition flag after a delay
+    setTimeout(() => {
+        isTransitioning = false;
+        
+        // Final cleanup check
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        updateStatistics();
+        updateBreachTimerDisplay();
+    }, 200);
 }
 
 // You could add a clear button to your UI
@@ -1127,18 +1367,10 @@ videoPlayer.addEventListener('loadeddata', function() {
 
 // Load existing breach log entries
 function loadExistingBreachLog() {
-    const mockEntries = [
-        { type: 'yellow', time: '12:47:05', location: 'Yellow Line' },
-        { type: 'red', time: '12:41:18', location: 'Platform Edge' },
-        { type: 'yellow', time: '12:33:50', location: 'Yellow Line' },
-        { type: 'red', time: '11:41:18', location: 'Platform Edge' },
-        { type: 'yellow', time: '10:33:50', location: 'Yellow Line' }
-    ];
-    
-    breachLog.innerHTML = '';
-    mockEntries.forEach(entry => {
-        addBreachEntry(entry.type, entry.time, entry.location);
-    });
+    const breachLog = document.getElementById('breachLog');
+    if (breachLog) {
+        breachLog.innerHTML = '<div class="no-breaches">No breaches yet</div>';
+    }
 }
 
 function addBreachEntry(type, time, location) {
@@ -1196,27 +1428,30 @@ function toggleFullscreen() {
 }
 
 function updateTimestamp() {
-    setInterval(() => {
-        const timestamp = document.getElementById('timestamp');
-        const seconds = Math.floor(Math.random() * 60);
-        const minutes = Math.floor(Math.random() * 5);
-        timestamp.textContent = `${minutes}m ${seconds}s ago`;
-    }, 5000);
+    // Initial display
+    updateBreachTimerDisplay();
 }
 
 // Breach detection functions
 
 function clearBreach() {
     console.log('Clearing breach status...');
+    
+    const wasInBreach = currentBreachState !== 'safe';
+    currentBreachState = 'safe';
+    
+    if (wasInBreach) {
+        startSafeTimerDisplay();
+    }
+    
     clearAllBreachTimers();
+    
     const statusBar = document.getElementById('statusBar');
     const breachStatus = document.getElementById('breachStatus');
     const alertStatusItem = document.getElementById('alertStatusItem');
     
-    // Remove all breach classes
     statusBar.classList.remove('yellow-breach', 'red-breach', 'both-breach');
     
-    // Restore the safe icon with wrapper
     breachStatus.innerHTML = `
         <div class="icon-wrapper">
             <img src="${ICONS.safe}" alt="Safe" class="status-icon-large safe-icon">
@@ -1224,7 +1459,6 @@ function clearBreach() {
         <span class="breach-text">No breach detected</span>
     `;
     
-    // Use custom bell_icon.png for disabled state
     alertStatusItem.innerHTML = `
     <div class="icon-wrapper">
         <img src="${ICONS.alertDisabled}" alt="Alert Disabled" style="width: 24px; height: 24px; object-fit: contain;">
@@ -1232,19 +1466,22 @@ function clearBreach() {
     <span class="alert-text-disabled">Alert: Disabled</span>
     `;
     
-    // Reset statistics
-    stats.yellowLineBreach = 0;
-    stats.platformEdgeBreach = 0;
-    stats.passengerCount = 3;
+    // Don't modify stats here - let processDetectionResults handle it
     updateStatistics();
 }
 
 // Update the breach simulation functions to use Font Awesome bell for alerts
 function simulateYellowLineBreach() {
     console.log('Yellow line breach detected!');
-    if (currentBreachType !== 'yellow') {
+    
+    const stateChanged = currentBreachState !== 'yellow';
+    currentBreachState = 'yellow';
+    
+    if (stateChanged) {
         startBreachTimer('yellow');
+        startBreachTimerDisplay();
     }
+    
     const statusBar = document.getElementById('statusBar');
     const breachStatus = document.getElementById('breachStatus');
     const alertStatusItem = document.getElementById('alertStatusItem');
@@ -1259,7 +1496,6 @@ function simulateYellowLineBreach() {
         <span class="breach-text">Warning: zone breach</span>
     `;
     
-    // Use Font Awesome bell for enabled state
     alertStatusItem.innerHTML = `
         <div class="icon-wrapper">
             <i class="fas fa-bell alert-icon-enabled" style="color: #FFC107; font-size: 24px;"></i>
@@ -1267,23 +1503,22 @@ function simulateYellowLineBreach() {
         <span class="alert-text-enabled">Alert: Enabled</span>
     `;
     
-    // Rest of the function remains the same...
-    const currentTime = new Date();
-    const timeString = currentTime.toTimeString().split(' ')[0];
-    addNewBreachEntry('yellow', timeString, 'Yellow Line');
-    
-    stats.yellowLineBreach++;
-    totalBreachCounts.yellow++;
-    stats.passengerCount = Math.floor(Math.random() * 5) + 3;
+    // Just update the display, don't modify stats
     updateStatistics();
-    updateBreachChart();
 }
 
+// Update your simulatePlatformEdgeBreach function
 function simulatePlatformEdgeBreach() {
     console.log('Platform edge breach detected!');
-    if (currentBreachType !== 'red') {
+    
+    const stateChanged = currentBreachState !== 'red';
+    currentBreachState = 'red';
+    
+    if (stateChanged) {
         startBreachTimer('red');
+        startBreachTimerDisplay();
     }
+    
     const statusBar = document.getElementById('statusBar');
     const breachStatus = document.getElementById('breachStatus');
     const alertStatusItem = document.getElementById('alertStatusItem');
@@ -1298,7 +1533,6 @@ function simulatePlatformEdgeBreach() {
         <span class="breach-text">Warning: zone breach</span>
     `;
     
-    // Use Font Awesome bell for enabled state
     alertStatusItem.innerHTML = `
         <div class="icon-wrapper">
             <i class="fas fa-bell alert-icon-enabled" style="color: #f44336; font-size: 24px;"></i>
@@ -1306,23 +1540,21 @@ function simulatePlatformEdgeBreach() {
         <span class="alert-text-enabled">Alert: Enabled</span>
     `;
     
-    // Rest of the function remains the same...
-    const currentTime = new Date();
-    const timeString = currentTime.toTimeString().split(' ')[0];
-    addNewBreachEntry('red', timeString, 'Platform Edge');
-    
-    stats.platformEdgeBreach++;
-    totalBreachCounts.red++;
-    stats.passengerCount = Math.floor(Math.random() * 5) + 5;
+    // Just update the display, don't modify stats
     updateStatistics();
-    updateBreachChart();
 }
 
 function simulateBothBreaches() {
     console.log('Both breaches detected!');
-    if (currentBreachType !== 'both') {
+    
+    const stateChanged = currentBreachState !== 'both';
+    currentBreachState = 'both';
+    
+    if (stateChanged) {
         startBreachTimer('both');
+        startBreachTimerDisplay();
     }
+    
     const statusBar = document.getElementById('statusBar');
     const breachStatus = document.getElementById('breachStatus');
     const alertStatusItem = document.getElementById('alertStatusItem');
@@ -1337,7 +1569,6 @@ function simulateBothBreaches() {
         <span class="breach-text">CRITICAL: Multiple breaches detected</span>
     `;
     
-    // Use Font Awesome bell for enabled state (red for critical)
     alertStatusItem.innerHTML = `
         <div class="icon-wrapper">
             <i class="fas fa-bell alert-icon-enabled" style="color: #FF5722; font-size: 24px;"></i>
@@ -1345,24 +1576,21 @@ function simulateBothBreaches() {
         <span class="alert-text-enabled">Alert: Enabled</span>
     `;
     
-    // Rest of the function remains the same...
-    const currentTime = new Date();
-    const timeString = currentTime.toTimeString().split(' ')[0];
-    addNewBreachEntry('red', timeString, 'Platform Edge');
-    addNewBreachEntry('yellow', timeString, 'Yellow Line');
-    
-    stats.yellowLineBreach = 1;
-    stats.platformEdgeBreach = 1;
-    totalBreachCounts.yellow++;
-    totalBreachCounts.red++;
-    stats.passengerCount = 8;
+    // Just update the display, don't modify stats
     updateStatistics();
-    updateBreachChart();
 }
 
 function loadExistingBreachLog() {
-    // Clear the breach log and add "no breaches yet" message
-    breachLog.innerHTML = '<div class="no-breaches">No breaches yet</div>';
+    const breachLog = document.getElementById('breachLog');
+    if (breachLog) {
+        breachLog.innerHTML = '<div class="no-breaches">No breaches yet</div>';
+    }
+    
+    // Initialize cumulative counts to 0
+    cumulativeBreachCounts = {
+        yellow: 0,
+        red: 0
+    };
 }
 
 // Add new breach entry to the log (prepend to top)
@@ -1420,12 +1648,20 @@ async function logBreachToServer(type, location) {
 
 async function resetSystem() {
     try {
-        // Reset stats first
+        // Reset timer states
+        currentBreachState = 'safe';
+        breachTimerStartTime = null;
+        safeTimerStartTime = Date.now();
+        
+        if (!breachTimerInterval) {
+            breachTimerInterval = setInterval(updateBreachTimerDisplay, 1000);
+        }
+        
+        // Reset stats on server
         await fetch(`${API_BASE_URL}/stats/reset`, {
             method: 'POST'
         });
         
-        // Then reset trackers with counter reset
         await fetch(`${API_BASE_URL}/reset_trackers`, {
             method: 'POST',
             headers: {
@@ -1436,6 +1672,15 @@ async function resetSystem() {
                 reset_counter: true
             })
         });
+        
+        // Clear local cumulative counts
+        cumulativeBreachCounts = {
+            yellow: 0,
+            red: 0
+        };
+        
+        // Clear breach tracking
+        breachTracking = {};
         
         // Clear local stats
         stats = {

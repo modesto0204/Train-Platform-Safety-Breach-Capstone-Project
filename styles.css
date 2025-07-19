@@ -66,6 +66,15 @@ body {
     justify-content: center; /* Add this */
 }
 
+.video-container:not(.has-video) #videoPlayer {
+    visibility: hidden;
+}
+
+.video-container:not(.has-video) #detectionCanvas,
+.video-container:not(.has-video) #zoneCanvas {
+    display: none;
+}
+
 #videoPlayer {
     width: 100%;
     height: 100%;
@@ -129,6 +138,12 @@ video::-webkit-media-controls-volume-slider {
 
 .upload-area:hover {
     background-color: rgba(30, 58, 95, 0.98);
+}
+
+.upload-area:not(.hidden) {
+    display: flex !important;
+    z-index: 20 !important;
+    background-color: rgba(30, 58, 95, 1) !important; /* Full opacity */
 }
 
 .upload-area.hidden {
