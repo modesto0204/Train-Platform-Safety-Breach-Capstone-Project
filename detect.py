@@ -5,7 +5,7 @@ import cv2
 import os
 import numpy as np
 
-model = YOLO(r"C:\Users\DELL\Downloads\Zero Index Capstone Project Front End\assets\model\best.pt")
+model = YOLO(r"C:\Users\Bxlaz\Desktop\Github Repository\Train-Platform-Safety-Breach-Capstone-Project\assets\model\best.pt")
 tracker = Sort()
 
 zone_definitions = {
