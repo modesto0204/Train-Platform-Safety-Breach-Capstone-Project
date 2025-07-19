@@ -1,0 +1,297 @@
+@font-face {
+    font-family: 'Agrandir';
+    src: url('assets/fonts/Agrandir-GrandHeavy.otf') format('opentype');
+    font-weight: 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Agrandir Regular';
+    src: url('assets/fonts/Agrandir-Regular.otf') format('opentype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    color: white;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.container {
+    height: 100vh;
+    padding: 20px;
+    background-image: url('assets/icons/main_bg.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: flex;
+    flex-direction: column;
+}
+
+.header {
+    margin-bottom: 20px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.page-title {
+    font-family: 'Agrandir', 'Arial', sans-serif;
+    font-size: 36px; /* Reduced from 48px */
+    font-weight: 900;
+    color: white;
+    margin-bottom: 0; /* Removed bottom margin */
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.chart-container {
+    background: rgba(3,39,77);
+    border-radius: 12px;
+    padding: 30px 20px; /* Reduced from 60px 40px */
+    margin-bottom: 20px; /* Reduced from 30px */
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1; /* Take remaining space */
+    min-height: 0; /* Important for flex */
+}
+
+.chart-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 350px; /* Reduced from 500px */
+    height: 350px; /* Reduced from 500px */
+    margin-bottom: 30px; /* Reduced from 40px */
+}
+
+.chart-legend {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: 'Agrandir Regular', 'Arial', sans-serif;
+    font-size: 24px; /* Reduced from 30px */
+    color: white;
+}
+
+.legend-color {
+    width: 18px; /* Reduced from 20px */
+    height: 18px; /* Reduced from 20px */
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.legend-color.yellow {
+    background-color: #FFD700;
+}
+
+.legend-color.red {
+    background-color: #FF4444;
+}
+
+.legend-label {
+    font-family: 'Agrandir', 'Arial', sans-serif;
+    font-weight: 400;
+}
+
+.legend-percentage {
+    font-family: 'Agrandir', 'Arial', sans-serif;
+    font-weight: 400;
+    margin-left: 8px;
+}
+
+.actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px; /* Reduced from 20px */
+    flex-shrink: 0;
+}
+
+.action-btn {
+    font-family: 'Agrandir', 'Arial', sans-serif;
+    font-weight: 900;
+    background: linear-gradient(135deg, #4a90e2, #357abd);
+    border: none;
+    color: white;
+    padding: 12px 24px; /* Reduced from 15px 30px */
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px; /* Reduced from 16px */
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(74, 144, 226, 0.4);
+}
+
+.action-btn.export-btn {
+    background: rgb(15, 72, 147);
+    box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+}
+
+.action-btn.export-btn:hover {
+    box-shadow: 0 6px 16px rgba(108, 117, 125, 0.4);
+}
+
+.action-btn.back-btn {
+    background: rgb(15, 72, 147);
+    box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+}
+
+.action-btn.back-btn:hover {
+    box-shadow: 0 6px 16px rgba(108, 117, 125, 0.4);
+}
+
+.export-options {
+    position: relative;
+    display: inline-block;
+}
+
+.export-dropdown {
+    display: none;
+    position: absolute;
+    bottom: 100%;
+    right: 0;
+    background: rgba(3,39,77);
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 8px;
+    min-width: 120px;
+}
+
+.export-dropdown.show {
+    display: block;
+}
+
+.export-option {
+    display: block;
+    width: 100%;
+    padding: 10px 16px; /* Reduced from 12px 20px */
+    background: transparent;
+    border: none;
+    color: white;
+    font-family: 'Agrandir Regular', 'Arial', sans-serif;
+    font-size: 13px; /* Reduced from 14px */
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    text-align: left;
+}
+
+.export-option:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.export-option:first-child {
+    border-radius: 8px 8px 0 0;
+}
+
+.export-option:last-child {
+    border-radius: 0 0 8px 8px;
+}
+
+/* For very small screens or when height is limited */
+@media (max-height: 768px) {
+    .container {
+        padding: 15px;
+    }
+    
+    .page-title {
+        font-size: 28px;
+    }
+    
+    .header {
+        margin-bottom: 15px;
+    }
+    
+    .chart-container {
+        padding: 20px 15px;
+        margin-bottom: 15px;
+    }
+    
+    .chart-wrapper {
+        max-width: 300px;
+        height: 300px;
+        margin-bottom: 20px;
+    }
+    
+    .legend-item {
+        font-size: 20px;
+    }
+    
+    .action-btn {
+        padding: 10px 20px;
+        font-size: 12px;
+    }
+    
+    .actions {
+        gap: 10px;
+    }
+}
+
+/* For wide screens, limit the container width */
+@media (min-width: 1920px) {
+    .container {
+        max-width: 1600px;
+        margin: 0 auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+    
+    .page-title {
+        font-size: 28px;
+    }
+    
+    .chart-container {
+        padding: 30px 15px;
+    }
+    
+    .chart-wrapper {
+        max-width: 300px;
+        height: 300px;
+    }
+    
+    .chart-legend {
+        gap: 20px;
+    }
+    
+    .legend-item {
+        font-size: 18px;
+    }
+    
+    .legend-percentage {
+        font-size: 16px;
+    }
+    
+    .actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+}

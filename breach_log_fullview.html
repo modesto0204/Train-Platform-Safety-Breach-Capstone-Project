@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Breach Log - Platform Safety Detection System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="breach_log_fullview.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            
+            <div class="filter-tabs">
+                <button class="filter-tab active" data-filter="all">All</button>
+                <button class="filter-tab" data-filter="yellow">Yellow Line</button>
+                <button class="filter-tab" data-filter="platform">Platform Edge</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div class="table-wrapper">
+                <table id="breachTable">
+                    <thead class="table-header">
+                        <tr>
+                            <th>Time</th>
+                            <th>Breach Type</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- Data will be populated by JavaScript -->
+                    </tbody>
+                </table>
+                <div id="noDataMessage" class="no-data" style="display: none;">
+                    <i class="fas fa-inbox"></i>
+                    <p>No breach records found</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button class="action-btn export-btn" onclick="exportToCSV()">
+                <i class="fas fa-download"></i> Export
+            </button>
+        </div>
+    </div>
+
+    <script>
+    // Load breach data from localStorage or use default empty array
+    let breachData = [];
+    
+    // Try to load data from localStorage
+    const storedData = localStorage.getItem('breachLogData');
+    if (storedData) {
+        try {
+            breachData = JSON.parse(storedData);
+        } catch (e) {
+            console.error('Error parsing breach data:', e);
+            breachData = [];
+        }
+    }
+
+    let currentFilter = 'all';
+    let filteredData = [...breachData];
+
+    function initializeTable() {
+        renderTable();
+        setupFilterTabs();
+        
+        // Listen for storage changes (if user updates in another tab)
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'breachLogData') {
+                const newData = e.newValue ? JSON.parse(e.newValue) : [];
+                breachData = newData;
+                filterData();
+                renderTable();
+            }
+        });
+    }
+
+    function setupFilterTabs() {
+        const tabs = document.querySelectorAll('.filter-tab');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs
+                tabs.forEach(t => t.classList.remove('active'));
+                // Add active class to clicked tab
+                tab.classList.add('active');
+                
+                // Set current filter and render table
+                currentFilter = tab.dataset.filter;
+                filterData();
+                renderTable();
+            });
+        });
+    }
+
+    function filterData() {
+        switch(currentFilter) {
+            case 'yellow':
+                filteredData = breachData.filter(item => item.type === 'Yellow Line');
+                break;
+            case 'platform':
+                filteredData = breachData.filter(item => item.type === 'Platform Edge');
+                break;
+            default:
+                filteredData = [...breachData];
+        }
+    }
+
+    function renderTable() {
+        const tableBody = document.getElementById('tableBody');
+        const noDataMessage = document.getElementById('noDataMessage');
+
+        if (filteredData.length === 0) {
+            tableBody.innerHTML = '';
+            noDataMessage.style.display = 'block';
+            return;
+        }
+
+        noDataMessage.style.display = 'none';
+        
+        tableBody.innerHTML = filteredData.map(item => `
+            <tr>
+                <td class="time-column">${item.time}</td>
+                <td class="breach-type-column">${item.fullType}</td>
+                <td class="status-column">
+                    <div class="status-indicator status-${item.status}">
+                        <span class="status-dot ${item.status === 'warning' ? 'yellow' : 'red'}"></span>
+                        ${item.status === 'warning' ? 'Warning' : 'Danger'}
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function exportToCSV() {
+        if (filteredData.length === 0) {
+            alert('No data to export');
+            return;
+        }
+
+        // Create CSV content
+        const headers = ['Time', 'Breach Type', 'Status'];
+        const csvContent = [
+            headers.join(','),
+            ...filteredData.map(item => [
+                item.time,
+                `"${item.fullType}"`,
+                item.status === 'warning' ? 'Warning' : 'Danger'
+            ].join(','))
+        ].join('\n');
+
+        // Create blob and download
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        
+        // Generate filename with current filter and timestamp
+        const filterName = currentFilter === 'all' ? 'All' : 
+                          currentFilter === 'yellow' ? 'YellowLine' : 'PlatformEdge';
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
+        link.setAttribute('download', `BreachLog_${filterName}_${timestamp}.csv`);
+        
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function goBack() {
+        // Navigate back to dashboard
+        window.location.href = 'index.html';
+    }
+
+    // Function to refresh data from localStorage
+    function refreshData() {
+        const storedData = localStorage.getItem('breachLogData');
+        if (storedData) {
+            try {
+                breachData = JSON.parse(storedData);
+                filterData();
+                renderTable();
+            } catch (e) {
+                console.error('Error parsing breach data:', e);
+            }
+        }
+    }
+
+    // Initialize the table when page loads
+    document.addEventListener('DOMContentLoaded', initializeTable);
+
+    // Refresh data when page becomes visible (in case it was updated in another tab)
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) {
+            refreshData();
+        }
+    });
+</script>
+</body>
+</html>

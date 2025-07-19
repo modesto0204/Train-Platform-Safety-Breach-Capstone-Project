@@ -43,6 +43,23 @@ let cumulativeBreachCounts = {
 // Track which persons have been logged to avoid duplicates
 let breachTracking = {};
 
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeBreachLogModal();
+        closeBreachChartModal();
+    }
+});
+
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('modal-overlay')) {
+        if (e.target.id === 'breachLogModal') {
+            closeBreachLogModal();
+        } else if (e.target.id === 'breachChartModal') {
+            closeBreachChartModal();
+        }
+    }
+});
+
 document.addEventListener('DOMContentLoaded', async function() {
     initializeChart();
     setupEventListeners();
@@ -79,6 +96,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         </div>
         <span class="alert-text-disabled">Alert: Disabled</span>
     `;
+
+    makeBreachLogClickable();
+    makeBreachChartClickable();
 });
 
 const ALARMS = {
@@ -995,6 +1015,17 @@ function updateStatistics() {
     platformEdgeBreachEl.textContent = stats.platformEdgeBreach;
     passengerCountEl.textContent = stats.passengerCount;
 }
+
+const originalUpdateBreachChart = updateBreachChart;
+updateBreachChart = function() {
+    originalUpdateBreachChart();
+    
+    // Also update modal chart if it exists
+    if (modalBreachChart) {
+        updateModalChart();
+    }
+};
+
 // Function to update the breach breakdown chart
 function updateBreachChart() {
     const total = totalBreachCounts.yellow + totalBreachCounts.red;
@@ -1021,6 +1052,205 @@ function updateBreachChart() {
     
     breachChart.update();
 }
+
+// Add this function to make breach log clickable
+function makeBreachLogClickable() {
+    const breachLogSection = document.querySelector('.breach-log-section');
+    if (breachLogSection) {
+        // Add cursor pointer style
+        breachLogSection.style.cursor = 'pointer';
+        
+        // Add hover effect
+        breachLogSection.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+            this.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.3)';
+            this.style.transition = 'all 0.3s ease';
+        });
+        
+        breachLogSection.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = 'none';
+        });
+        
+        // Add click event
+        breachLogSection.addEventListener('click', function(e) {
+            if (!e.target.closest('.log-entry')) {
+                saveBreachLogToStorage();
+                openBreachLogModal();
+            }
+        });
+    }
+}
+
+function openBreachLogModal() {
+    const modal = document.getElementById('breachLogModal');
+    modal.style.display = 'flex';
+}
+
+function closeBreachLogModal() {
+    const modal = document.getElementById('breachLogModal');
+    modal.style.display = 'none';
+    
+    // Refresh breach log in main view in case it was updated
+    refreshBreachLogFromStorage();
+}
+
+// Function to open breach chart modal
+function openBreachChartModal() {
+    const modal = document.getElementById('breachChartModal');
+    modal.style.display = 'flex';
+    
+    // Initialize chart if not already done
+    if (!modalBreachChart) {
+        initializeModalChart();
+    }
+    
+    // Update modal chart with current data
+    updateModalChart();
+}
+
+// Function to close breach chart modal
+function closeBreachChartModal() {
+    const modal = document.getElementById('breachChartModal');
+    modal.style.display = 'none';
+}
+
+// Function to update modal chart with current data
+function updateModalChart() {
+    if (!modalBreachChart) return;
+    
+    const total = totalBreachCounts.yellow + totalBreachCounts.red;
+    const modalBody = document.querySelector('#breachChartModal .modal-body');
+    
+    if (total === 0) {
+        // Add no-data class to gray out the chart
+        modalBody.classList.add('no-data');
+        
+        // Show equal split but with 0% in legend
+        modalBreachChart.data.datasets[0].data = [50, 50];
+        document.getElementById('modalYellowPercentage').textContent = '0%';
+        document.getElementById('modalRedPercentage').textContent = '0%';
+    } else {
+        // Remove no-data class
+        modalBody.classList.remove('no-data');
+        
+        const yellowPercentage = Math.round((totalBreachCounts.yellow / total) * 100);
+        const redPercentage = Math.round((totalBreachCounts.red / total) * 100);
+        
+        // Use actual counts for the chart
+        modalBreachChart.data.datasets[0].data = [totalBreachCounts.yellow, totalBreachCounts.red];
+        
+        document.getElementById('modalYellowPercentage').textContent = `${yellowPercentage}%`;
+        document.getElementById('modalRedPercentage').textContent = `${redPercentage}%`;
+    }
+    
+    modalBreachChart.update();
+}
+
+
+// Function to export chart from modal
+function exportChartFromModal() {
+    if (!modalBreachChart) {
+        alert('Chart not initialized');
+        return;
+    }
+
+    // Create a temporary canvas with larger dimensions
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d');
+    const originalCanvas = modalBreachChart.canvas;
+    
+    // Set canvas dimensions
+    tempCanvas.width = 800;
+    tempCanvas.height = 600;
+    
+    // Fill with white background
+    tempCtx.fillStyle = '#ffffff';
+    tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+    
+    // Draw title
+    tempCtx.fillStyle = '#1e3c72';
+    tempCtx.font = 'bold 32px Arial';
+    tempCtx.textAlign = 'center';
+    tempCtx.fillText('BREACH BREAKDOWN CHART', tempCanvas.width / 2, 50);
+    
+    // Draw the chart
+    const chartSize = 400;
+    const chartX = (tempCanvas.width - chartSize) / 2;
+    const chartY = 80;
+    
+    tempCtx.drawImage(originalCanvas, 
+        0, 0, originalCanvas.width, originalCanvas.height,
+        chartX, chartY, chartSize, chartSize
+    );
+    
+    // Draw legend
+    const legendY = chartY + chartSize + 40;
+    const total = totalBreachCounts.yellow + totalBreachCounts.red;
+    const yellowPercentage = total > 0 ? Math.round((totalBreachCounts.yellow / total) * 100) : 0;
+    const redPercentage = total > 0 ? Math.round((totalBreachCounts.red / total) * 100) : 0;
+    
+    // Yellow Line legend
+    tempCtx.fillStyle = '#FFD700';
+    tempCtx.fillRect(250, legendY, 20, 20);
+    tempCtx.fillStyle = '#1e3c72';
+    tempCtx.font = '18px Arial';
+    tempCtx.textAlign = 'left';
+    tempCtx.fillText('Yellow Line ' + yellowPercentage + '%', 280, legendY + 15);
+    
+    // Platform Edge legend
+    tempCtx.fillStyle = '#FF4444';
+    tempCtx.fillRect(450, legendY, 20, 20);
+    tempCtx.fillStyle = '#1e3c72';
+    tempCtx.fillText('Platform Edge ' + redPercentage + '%', 480, legendY + 15);
+    
+    // Generate filename with timestamp
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
+    const filename = `BreachBreakdownChart_${timestamp}.png`;
+    
+    // Convert to blob and download
+    tempCanvas.toBlob(function(blob) {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }, 'image/png');
+}
+
+// Add this function to make breach breakdown chart clickable
+let modalBreachChart;
+
+// Function to make breach chart clickable
+function makeBreachChartClickable() {
+    const breachBreakdownSection = document.querySelector('.breach-breakdown-section');
+    if (breachBreakdownSection) {
+        // Add cursor pointer style
+        breachBreakdownSection.style.cursor = 'pointer';
+        
+        // Add hover effect
+        breachBreakdownSection.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+            this.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.3)';
+            this.style.transition = 'all 0.3s ease';
+        });
+        
+        breachBreakdownSection.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = 'none';
+        });
+        
+        // Add click event
+        breachBreakdownSection.addEventListener('click', function() {
+            openBreachChartModal();
+        });
+    }
+}
+
 
 let currentCamera = 'cam1';
 
@@ -1173,6 +1403,8 @@ async function clearVideo() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     canvas.width = canvas.width;
     
+    localStorage.removeItem('breachLogData');
+
     // Clear zone canvas if it exists
     const zoneCanvas = document.getElementById('zoneCanvas');
     if (zoneCanvas) {
@@ -1465,6 +1697,30 @@ function initializeChart() {
     document.querySelector('.legend-item:nth-child(2) span:last-child').textContent = 'Platform Edge 0%';
 }
 
+function initializeModalChart() {
+    const ctx = document.getElementById('modalBreachChart').getContext('2d');
+    modalBreachChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: ['Yellow Line', 'Platform Edge'],
+            datasets: [{
+                data: [50, 50], // Default equal split
+                backgroundColor: ['#ffd700', '#ff4444'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false // Using custom legend
+                }
+            }
+        }
+    });
+}
+
 // UI functions
 function toggleFullscreen() {
     if (!document.fullscreenElement) {
@@ -1640,7 +1896,28 @@ function loadExistingBreachLog() {
     };
 }
 
-// Add new breach entry to the log (prepend to top)
+// Add this function to save breach data to localStorage
+function saveBreachLogToStorage() {
+    const breachEntries = [];
+    const logEntries = document.querySelectorAll('.breach-log .log-entry');
+    
+    logEntries.forEach(entry => {
+        const time = entry.querySelector('.log-time').textContent;
+        const location = entry.querySelector('.log-location').textContent;
+        const isYellow = entry.querySelector('.log-dot.yellow') !== null;
+        
+        breachEntries.push({
+            time: time,
+            type: location,
+            status: isYellow ? 'warning' : 'danger',
+            fullType: location === 'Yellow Line' ? 'Yellow Line Breach' : 'Platform Edge Breach'
+        });
+    });
+    
+    localStorage.setItem('breachLogData', JSON.stringify(breachEntries));
+}
+
+// Update your addNewBreachEntry function to save data after adding
 function addNewBreachEntry(type, time, location) {
     // Remove "no breaches yet" message if it exists
     const noBreachesMsg = breachLog.querySelector('.no-breaches');
@@ -1670,6 +1947,9 @@ function addNewBreachEntry(type, time, location) {
     while (breachLog.children.length > 10) {
         breachLog.removeChild(breachLog.lastChild);
     }
+    
+    // Save to localStorage
+    saveBreachLogToStorage();
     
     // Log to server
     logBreachToServer(type, location);
