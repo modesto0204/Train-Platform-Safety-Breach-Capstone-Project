@@ -320,6 +320,9 @@ function smoothDetections(newDetections) {
 let currentDetections = [];
 
 // Update the processDetectionResults function to actually draw boxes
+let breachDurationTracking = {};
+
+// Update processDetectionResults
 function processDetectionResults(result) {
     if (isTransitioning) {
         console.log('Skipping detection processing during transition');
@@ -333,13 +336,16 @@ function processDetectionResults(result) {
             clearBreach();
         }
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        stats.passengerCount = 0;
-        stats.yellowLineBreach = 0;  // Reset to 0 when no detections
+        
+        // Reset all stats to 0 when no detections
+        stats.yellowLineBreach = 0;
         stats.platformEdgeBreach = 0;
+        stats.passengerCount = 0;
         updateStatistics();
         return;
     }
     
+    // Reset current frame statistics
     currentFrameStats = {
         yellowBreaches: 0,
         redBreaches: 0,
@@ -352,8 +358,11 @@ function processDetectionResults(result) {
     let hasWarningBreach = false;
     let hasDangerBreach = false;
     
-    // Track current breaching persons
-    let currentBreachingPersons = new Set();
+    // Track who's currently in breach zones
+    let currentBreachingPersons = {
+        yellow: new Set(),
+        red: new Set()
+    };
     
     if (currentDetections.length > 0) {
         currentDetections.forEach(detection => {
@@ -365,71 +374,109 @@ function processDetectionResults(result) {
             let boxColor = '#00ff00';
             let statusLabel = 'SAFE';
             
+            // Initialize duration tracking for this person if needed
+            if (!breachDurationTracking[detection.track_id]) {
+                breachDurationTracking[detection.track_id] = {
+                    yellowStartTime: null,
+                    redStartTime: null,
+                    yellowLogged: false,
+                    redLogged: false
+                };
+            }
+            
+            const personTracking = breachDurationTracking[detection.track_id];
+            
             if (detection.breach_type === 'danger') {
                 boxColor = '#ff4444';
                 statusLabel = 'DANGER';
-                currentFrameStats.redBreaches++;  // This person is currently in red zone
+                currentFrameStats.redBreaches++;
                 hasDangerBreach = true;
+                currentBreachingPersons.red.add(detection.track_id);
                 
-                // Track for logging only
-                if (!breachTracking[detection.track_id]) {
-                    breachTracking[detection.track_id] = {
-                        inYellowZone: false,
-                        inRedZone: false
-                    };
+                // Start tracking red zone time
+                if (!personTracking.redStartTime) {
+                    personTracking.redStartTime = Date.now();
+                    console.log(`Person ${detection.track_id} entered red zone`);
                 }
                 
-                if (!breachTracking[detection.track_id].inRedZone) {
-                    breachTracking[detection.track_id].inRedZone = true;
-                    
-                    // Log the breach event
+                // Check if 5 seconds have passed
+                const redDuration = Date.now() - personTracking.redStartTime;
+                if (redDuration >= 3000 && !personTracking.redLogged) {
+                    // Log the breach after 5 seconds
+                    personTracking.redLogged = true;
                     const currentTime = new Date();
                     const timeString = currentTime.toTimeString().split(' ')[0];
                     addNewBreachEntry('red', timeString, 'Platform Edge');
                     
-                    // Update cumulative for chart/log history
+                    // Update cumulative for chart
                     cumulativeBreachCounts.red++;
+                    totalBreachCounts.red = cumulativeBreachCounts.red;
+                    updateBreachChart();
+                    
+                    console.log(`Logged red zone breach for person ${detection.track_id} after 5 seconds`);
                 }
                 
             } else if (detection.breach_type === 'warning') {
                 boxColor = '#ffd700';
                 statusLabel = 'WARNING';
-                currentFrameStats.yellowBreaches++;  // This person is currently in yellow zone
+                currentFrameStats.yellowBreaches++;
                 hasWarningBreach = true;
+                currentBreachingPersons.yellow.add(detection.track_id);
                 
-                if (!breachTracking[detection.track_id]) {
-                    breachTracking[detection.track_id] = {
-                        inYellowZone: false,
-                        inRedZone: false
-                    };
+                // Start tracking yellow zone time
+                if (!personTracking.yellowStartTime) {
+                    personTracking.yellowStartTime = Date.now();
+                    console.log(`Person ${detection.track_id} entered yellow zone`);
                 }
                 
-                if (!breachTracking[detection.track_id].inYellowZone) {
-                    breachTracking[detection.track_id].inYellowZone = true;
-                    
-                    // Log the breach event
+                // Check if 5 seconds have passed
+                const yellowDuration = Date.now() - personTracking.yellowStartTime;
+                if (yellowDuration >= 3000 && !personTracking.yellowLogged) {
+                    // Log the breach after 5 seconds
+                    personTracking.yellowLogged = true;
                     const currentTime = new Date();
                     const timeString = currentTime.toTimeString().split(' ')[0];
                     addNewBreachEntry('yellow', timeString, 'Yellow Line');
                     
-                    // Update cumulative for chart/log history
+                    // Update cumulative for chart
                     cumulativeBreachCounts.yellow++;
+                    totalBreachCounts.yellow = cumulativeBreachCounts.yellow;
+                    updateBreachChart();
+                    
+                    console.log(`Logged yellow zone breach for person ${detection.track_id} after 5 seconds`);
                 }
             } else {
-                // Person is in safe zone - reset their breach status
-                if (breachTracking[detection.track_id]) {
-                    breachTracking[detection.track_id].inYellowZone = false;
-                    breachTracking[detection.track_id].inRedZone = false;
+                // Person is in safe zone - reset their timers
+                if (personTracking.yellowStartTime) {
+                    console.log(`Person ${detection.track_id} left yellow zone`);
                 }
+                if (personTracking.redStartTime) {
+                    console.log(`Person ${detection.track_id} left red zone`);
+                }
+                
+                personTracking.yellowStartTime = null;
+                personTracking.redStartTime = null;
+                personTracking.yellowLogged = false;
+                personTracking.redLogged = false;
             }
             
-            // Draw bounding box code...
+            // Draw bounding box
             ctx.lineWidth = 3;
             ctx.strokeStyle = boxColor;
             ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
             
+            // Add time in zone to label if applicable
+            let timeInZone = '';
+            if (detection.breach_type === 'danger' && personTracking.redStartTime) {
+                const duration = Math.floor((Date.now() - personTracking.redStartTime) / 1000);
+                timeInZone = ` (${duration}s)`;
+            } else if (detection.breach_type === 'warning' && personTracking.yellowStartTime) {
+                const duration = Math.floor((Date.now() - personTracking.yellowStartTime) / 1000);
+                timeInZone = ` (${duration}s)`;
+            }
+            
             const trackLabel = detection.track_id ? `Person #${detection.track_id}` : 'Person';
-            const fullLabel = `${trackLabel} - ${statusLabel}`;
+            const fullLabel = `${trackLabel} - ${statusLabel}${timeInZone}`;
             
             const fontSize = fullLabel.length > 40 ? 12 : 14;
             ctx.font = `bold ${fontSize}px Arial`;
@@ -469,15 +516,17 @@ function processDetectionResults(result) {
     }
     
     // Clean up tracking for persons no longer in breach zones
-    Object.keys(breachTracking).forEach(trackId => {
+    Object.keys(breachDurationTracking).forEach(trackId => {
         const trackIdNum = parseInt(trackId);
-        const personDetection = currentDetections.find(d => d.track_id === trackIdNum);
-        
-        if (!personDetection || !personDetection.breach_type) {
-            // Person is no longer in a breach zone
-            if (breachTracking[trackId]) {
-                breachTracking[trackId].inYellowZone = false;
-                breachTracking[trackId].inRedZone = false;
+        if (!currentBreachingPersons.yellow.has(trackIdNum) && 
+            !currentBreachingPersons.red.has(trackIdNum)) {
+            // Person is not in any breach zone, reset if they were
+            const tracking = breachDurationTracking[trackId];
+            if (tracking.yellowStartTime || tracking.redStartTime) {
+                tracking.yellowStartTime = null;
+                tracking.redStartTime = null;
+                tracking.yellowLogged = false;
+                tracking.redLogged = false;
             }
         }
     });
@@ -508,20 +557,15 @@ function processDetectionResults(result) {
         }
     }
     
-    // IMPORTANT: Update statistics with CURRENT frame counts only
+    // Update statistics with current counts
     stats.yellowLineBreach = currentFrameStats.yellowBreaches;
     stats.platformEdgeBreach = currentFrameStats.redBreaches;
     stats.passengerCount = currentFrameStats.passengers;
     
-    // Force update the display immediately
+    // Force update display
     document.getElementById('yellowLineBreach').textContent = currentFrameStats.yellowBreaches;
     document.getElementById('platformEdgeBreach').textContent = currentFrameStats.redBreaches;
     document.getElementById('passengerCount').textContent = currentFrameStats.passengers;
-    
-    // Update chart with cumulative data
-    totalBreachCounts.yellow = cumulativeBreachCounts.yellow;
-    totalBreachCounts.red = cumulativeBreachCounts.red;
-    updateBreachChart();
 }
 
 async function resetTrackers(camera = null) {
@@ -1172,6 +1216,9 @@ async function clearVideo() {
     // Clear breach tracking
     breachTracking = {};
     
+    // Reset breach duration tracking
+    breachDurationTracking = {};
+
     // Reset stats
     stats = {
         yellowLineBreach: 0,
@@ -1681,6 +1728,9 @@ async function resetSystem() {
         
         // Clear breach tracking
         breachTracking = {};
+
+        // Reset breach duration tracking
+        breachDurationTracking = {};
         
         // Clear local stats
         stats = {
