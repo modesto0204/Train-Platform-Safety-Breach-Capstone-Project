@@ -41,7 +41,7 @@ if torch.cuda.is_available():
 import os
 
 # Your model path
-MODEL_PATH = r"C:\Users\DELL\Downloads\Zero Index Capstone Project Front End\assets\model\best.pt"
+MODEL_PATH = r"C:\Users\joshuaneo\Downloads\Zero Index Capstone Project Front End-20250923T053031Z-1-001\Zero Index Capstone Project Front End\assets\model\best.pt"
 
 # Verify the file exists
 if os.path.exists(MODEL_PATH):
@@ -70,7 +70,7 @@ import traceback
 from shapely.geometry import Polygon, Point
 
 # Add the path where detect.py is located
-detect_path = r"C:\Users\DELL\Downloads\Zero Index Capstone Project Front End"
+detect_path = r"C:\Users\joshuaneo\Downloads\Zero Index Capstone Project Front End-20250923T053031Z-1-001\Zero Index Capstone Project Front End"
 if detect_path not in sys.path:
     sys.path.append(detect_path)
 
@@ -78,7 +78,7 @@ if detect_path not in sys.path:
 from detect import zone_definitions
 
 # Your model path
-MODEL_PATH = r"C:\Users\DELL\Downloads\Zero Index Capstone Project Front End\assets\model\best.pt"
+MODEL_PATH = r"C:\Users\joshuaneo\Downloads\Zero Index Capstone Project Front End-20250923T053031Z-1-001\Zero Index Capstone Project Front End\assets\model\best.pt"
 
 class SubwayDetectionServer:
     def __init__(self, model_path):

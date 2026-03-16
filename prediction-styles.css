@@ -1,0 +1,570 @@
+/* prediction-styles.css */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Import fonts if using the same as main styles */
+@font-face {
+    font-family: 'Agrandir';
+    src: url('assets/fonts/Agrandir-GrandHeavy.otf') format('opentype');
+    font-weight: 900;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Agrandir Regular';
+    src: url('assets/fonts/Agrandir-Regular.otf') format('opentype');
+    font-weight: 400;
+    font-style: normal;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #0a1929;
+    color: white;
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-image: url('assets/icons/main_bg.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* Navigation Header - Similar to main styles */
+.nav-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background: transparent;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+}
+
+.nav-right {
+    display: flex;
+    gap: 40px;
+}
+
+.nav-btn {
+    font-family: 'Agrandir', 'Arial', sans-serif;
+    font-weight: 900;
+    background: transparent;
+    border: none;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 18px;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    padding: 8px 12px;
+    border-radius: 8px;
+    text-transform: uppercase;
+}
+
+.nav-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.nav-icon {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
+/* Main Prediction Container */
+.prediction-container {
+    display: flex;
+    padding: 80px 20px 20px;
+    gap: 30px;
+    max-width: 1400px;
+    margin: 0 auto;
+    min-height: calc(100vh - 100px); /* Full height minus padding */
+    align-items: stretch; /* Stretch all children to same height */
+}
+
+.left-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+/* Current Status Card - Left Section */
+.current-status-card {
+    background: url('assets/icons/density_bg.png');
+    padding: 30px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    width: 100%;
+    min-height: 250px;
+    
+}
+
+.status-left {
+    position: relative;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 180px; /* Fixed width for consistent positioning */
+    height: 150px;
+}
+
+.current-status-card h1 {
+    font-family: 'Agrandir', 'Arial', sans-serif;
+    font-size: 48px;
+    font-weight: 900;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-align: center;
+}
+
+.current-status-card h2, p {
+    text-align: center;
+}
+
+.platform-subtitle {
+    font-size: 20px;
+    margin-bottom: 40px;
+    opacity: 0.9;
+}
+
+.crowd-visual {
+    position: relative;
+    margin: 40px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.forecast-icon {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    margin: 10px 0;
+}
+
+/* Time slot icons */
+.time-slot-icon {
+    width: 100px;
+    height: 100px;
+    object-fit: contain;
+}
+
+.crowd-image {
+    width: 200px;
+    height: 200px;
+    object-fit: contain;
+}
+
+.status-left .percentage {
+    font-family: 'Agrandir', 'Arial', sans-serif;
+    font-size: 30px;
+    font-weight: 900;
+    position: absolute;
+    top: 80%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.status-right {
+    flex: 1;
+    text-align: left;
+}
+
+.status-right h1 {
+    font-family: 'Agrandir', 'Arial', sans-serif;
+    font-size: 42px;
+    font-weight: 900;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.platform-subtitle {
+    font-size: 18px;
+    margin-bottom: 10px;
+    opacity: 0.9;
+}
+
+.crowd-status {
+    font-family: 'Agrandir', 'Arial', sans-serif;
+    font-size: 30px;
+    font-weight: 900;
+    font-style: italic;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 0;
+}
+
+
+.hourly-forecast {
+    display: flex;
+    flex-direction: column;
+    background: url('assets/icons/prediction_bg.png');
+    padding: 10px;
+    border-radius: 20px;
+    display: flex;
+    gap: 40px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    width: 100%;
+}
+
+.hourly-forecast h2 {
+    font-family: 'Agrandir', 'Arial', sans-serif;
+    font-size: 28px;
+    font-weight: 900;
+    text-align: center;
+    margin-top: 15px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.forecast-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+}
+
+.forecast-card {
+    background: transparent;
+    border: 2px solid;
+    border-radius: 15px;
+    padding: 25px 15px;
+    text-align: center;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 225px;
+}
+
+.forecast-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+}
+
+.forecast-card .time {
+    font-family: 'Agrandir', 'Arial', sans-serif;
+    font-size: 22px;
+    font-weight: 900;
+    margin-bottom: 10px;
+}
+
+.forecast-card .percentage {
+    font-family: 'Agrandir', 'Arial', sans-serif;
+    font-size: 40px;
+    font-weight: 900;
+    margin-bottom: 10px;
+    position: static;
+    transform: none;
+}
+
+.forecast-card .density {
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+/* Color coding for density levels */
+.forecast-card.low {
+    border-color: #4CAF50;
+    background: rgba(76, 175, 80, 0.2);
+}
+
+.forecast-card.moderate {
+    border-color: #FFC107;
+    background: rgba(255, 193, 7, 0.2);
+}
+
+.forecast-card.high {
+    border-color: #f44336;
+    background: rgba(244, 67, 54, 0.2);
+}
+
+/* Right Section - Time Predictions List */
+.time-predictions {
+    width: 350px;
+    background-image: url('assets/icons/prediction_bg.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    border-radius: 20px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow-y: auto; /* Enable vertical scrolling */
+    overflow-x: hidden; /* Hide horizontal scroll */
+    max-height: calc(100vh - 120px); /* Limit height to viewport */
+    position: relative;
+}
+
+.time-slot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 25px 30px;
+    background: transparent;
+    border: none; /* Remove left border */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2); /* Add separator line */
+    transition: all 0.3s ease;
+    flex: 1; /* Equal height for all slots */
+    position: relative;
+}
+
+.time-slot:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.time-slot .time {
+    font-family: 'Agrandir', 'Arial', sans-serif;
+    font-size: 18px;
+    font-weight: 900;
+    min-width: 70px;
+}
+
+.time-slot .density-label {
+    font-size: 16px;
+    font-weight: 600;
+    text-transform: uppercase;
+    min-width: 100px;
+    text-align: center;
+}
+
+/* Color coding for time slots */
+
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .prediction-container {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .current-status-card {
+        max-width: 100%;
+        margin-bottom: 30px;
+    }
+    
+    .hourly-forecast {
+        margin-bottom: 30px;
+        width: 100%;
+    }
+    
+    .time-predictions {
+        width: 100%;
+        max-width: 500px;
+    }
+    
+    .forecast-cards {
+        grid-template-columns: 1fr;
+        max-width: 400px;
+        margin: 0 auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .nav-header {
+        flex-wrap: wrap;
+        padding: 10px;
+    }
+    
+    .nav-btn span {
+        display: none;
+    }
+    
+    .current-status-card h1 {
+        font-size: 32px;
+    }
+    
+    .percentage {
+        font-size: 48px;
+    }
+    
+    .crowd-status {
+        font-size: 24px;
+    }
+    
+    .hourly-forecast h2 {
+        font-size: 24px;
+    }
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.current-status-card,
+.forecast-card,
+.time-slot {
+    animation: fadeIn 0.6s ease-out;
+}
+
+.forecast-card:nth-child(2) { animation-delay: 0.1s; }
+.forecast-card:nth-child(3) { animation-delay: 0.2s; }
+.forecast-card:nth-child(4) { animation-delay: 0.3s; }
+
+.time-slot:nth-child(1) { animation-delay: 0.1s; }
+.time-slot:nth-child(2) { animation-delay: 0.2s; }
+.time-slot:nth-child(3) { animation-delay: 0.3s; }
+.time-slot:nth-child(4) { animation-delay: 0.4s; }
+.time-slot:nth-child(5) { animation-delay: 0.5s; }
+
+/* Loading animation for percentage */
+@keyframes countUp {
+    from {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.percentage {
+    animation: countUp 0.8s ease-out;
+}
+
+/* Pulse animation for current time slot */
+.time-slot.current {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        background: rgba(255, 255, 255, 0.1);
+    }
+    50% {
+        background: rgba(255, 255, 255, 0.2);
+        transform: scale(1.02);
+    }
+}
+
+/* Custom scrollbar for time predictions */
+.time-predictions::-webkit-scrollbar {
+    width: 6px;
+}
+
+.time-predictions::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+.time-predictions::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+}
+
+.time-predictions::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* Add glass morphism effect to cards */
+.forecast-card,
+.time-slot {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+/* Hover effects for interactive elements */
+.forecast-card:hover .percentage {
+    transform: scale(1.1);
+    transition: transform 0.3s ease;
+}
+
+/* Active state for navigation */
+.nav-btn.active {
+    background: rgba(255, 255, 255, 0.2);
+    border-bottom: 3px solid white;
+}
+
+/* Additional utility classes */
+.hidden {
+    display: none !important;
+}
+
+.fade-in {
+    animation: fadeIn 0.6s ease-out;
+}
+
+/* Error state styling */
+.error-message {
+    background: rgba(244, 67, 54, 0.2);
+    border: 1px solid #f44336;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    margin: 20px 0;
+}
+
+/* Success state styling */
+.success-message {
+    background: rgba(76, 175, 80, 0.2);
+    border: 1px solid #4CAF50;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    margin: 20px 0;
+}
+
+/* Loading spinner for data updates */
+.loading-spinner {
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    border-top: 3px solid white;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Print styles */
+@media print {
+    body {
+        background: white;
+        color: black;
+    }
+    
+    .nav-header {
+        display: none;
+    }
+    
+    .current-status-card,
+    .forecast-card,
+    .time-slot {
+        background: white !important;
+        border: 1px solid black !important;
+        color: black !important;
+    }
+}

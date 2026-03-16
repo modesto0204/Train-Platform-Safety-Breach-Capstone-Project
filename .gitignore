@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+temp/
+annotated/
+*.mp4
+*.avi
+assets/model/best.pt
+node_modules/
+.ipynb_checkpoints/
+CSV_LOG/

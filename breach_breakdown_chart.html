@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Breach Breakdown Chart - Platform Safety Detection System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <link rel="stylesheet" href="breach_breakdown_chart.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="page-title">Breach Breakdown Chart</h1>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-wrapper">
+                <canvas id="breachChart"></canvas>
+            </div>
+            
+            <div class="chart-legend">
+                <div class="legend-item">
+                    <div class="legend-color yellow"></div>
+                    <span class="legend-label">Yellow Line</span>
+                    <span class="legend-percentage" id="yellowPercentage">60%</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color red"></div>
+                    <span class="legend-label">Platform Edge</span>
+                    <span class="legend-percentage" id="redPercentage">40%</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button class="action-btn back-btn" onclick="goBack()">
+                <i class="fas fa-arrow-left"></i> Back
+            </button>
+            <div class="export-options">
+                <button class="action-btn export-btn" onclick="toggleExportDropdown()">
+                    <i class="fas fa-download"></i> Export
+                </button>
+                <div class="export-dropdown" id="exportDropdown">
+                    <button class="export-option" onclick="exportChart('png')">Export as PNG</button>
+                    <button class="export-option" onclick="exportChart('jpg')">Export as JPG</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let breachChart;
+        
+        // Sample breach data - in real implementation, this would come from your backend
+        const breachData = {
+            yellowLine: 6,  // 60%
+            platformEdge: 4  // 40%
+        };
+
+        function initializeChart() {
+            const ctx = document.getElementById('breachChart').getContext('2d');
+            
+            const total = breachData.yellowLine + breachData.platformEdge;
+            const yellowPercentage = Math.round((breachData.yellowLine / total) * 100);
+            const redPercentage = Math.round((breachData.platformEdge / total) * 100);
+            
+            // Update legend percentages
+            document.getElementById('yellowPercentage').textContent = yellowPercentage + '%';
+            document.getElementById('redPercentage').textContent = redPercentage + '%';
+
+            breachChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Yellow Line', 'Platform Edge'],
+                    datasets: [{
+                        data: [breachData.yellowLine, breachData.platformEdge],
+                        backgroundColor: [
+                            '#FFD700',  // Yellow
+                            '#FF4444'   // Red
+                        ],
+                        borderWidth: 0,
+                        hoverBorderWidth: 3,
+                        hoverBorderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: false // We're using custom legend
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(3,39,77,0.9)',
+                            titleColor: '#ffffff',
+                            bodyColor: '#ffffff',
+                            borderColor: 'rgba(255,255,255,0.1)',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            displayColors: true,
+                            titleFont: {
+                                family: 'Agrandir',
+                                size: 14,
+                                weight: 900
+                            },
+                            bodyFont: {
+                                family: 'Agrandir Regular',
+                                size: 12
+                            },
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = Math.round((context.parsed / total) * 100);
+                                    return context.label + ': ' + context.parsed + ' (' + percentage + '%)';
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        animateRotate: true,
+                        animateScale: true,
+                        duration: 1000,
+                        easing: 'easeOutQuart'
+                    },
+                    elements: {
+                        arc: {
+                            borderWidth: 0,
+                            hoverBorderWidth: 3
+                        }
+                    }
+                }
+            });
+        }
+
+        function toggleExportDropdown() {
+            const dropdown = document.getElementById('exportDropdown');
+            dropdown.classList.toggle('show');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const exportOptions = document.querySelector('.export-options');
+            if (!exportOptions.contains(event.target)) {
+                document.getElementById('exportDropdown').classList.remove('show');
+            }
+        });
+
+        function exportChart(format) {
+            // Hide dropdown
+            document.getElementById('exportDropdown').classList.remove('show');
+            
+            if (!breachChart) {
+                alert('Chart not initialized');
+                return;
+            }
+
+            // Create a temporary canvas with larger dimensions to include title and legend
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            const originalCanvas = breachChart.canvas;
+            
+            // Set canvas dimensions (larger to accommodate title and legend)
+            const padding = 60;
+            const titleHeight = 80;
+            const legendHeight = 100;
+            const chartSize = Math.min(originalCanvas.width, originalCanvas.height);
+            
+            tempCanvas.width = chartSize + (padding * 2);
+            tempCanvas.height = chartSize + titleHeight + legendHeight + (padding * 2);
+            
+            // Fill with white background
+            tempCtx.fillStyle = '#ffffff';
+            tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+            
+            // Draw title
+            tempCtx.fillStyle = '#1e3c72';
+            tempCtx.font = 'bold 32px Arial';
+            tempCtx.textAlign = 'center';
+            tempCtx.fillText('BREACH BREAKDOWN CHART', tempCanvas.width / 2, padding + 40);
+            
+            // Calculate chart position
+            const chartX = (tempCanvas.width - chartSize) / 2;
+            const chartY = padding + titleHeight;
+            
+            // Draw the chart
+            tempCtx.drawImage(originalCanvas, 
+                0, 0, originalCanvas.width, originalCanvas.height,
+                chartX, chartY, chartSize, chartSize
+            );
+            
+            // Draw legend
+            const legendY = chartY + chartSize + 40;
+            const legendCenterX = tempCanvas.width / 2;
+            
+            // Calculate percentages
+            const total = breachData.yellowLine + breachData.platformEdge;
+            const yellowPercentage = total > 0 ? Math.round((breachData.yellowLine / total) * 100) : 0;
+            const redPercentage = total > 0 ? Math.round((breachData.platformEdge / total) * 100) : 0;
+            
+            // Legend items spacing
+            const legendItemGap = 40;
+            const totalLegendWidth = 240; // Approximate total width for both items
+            const legendStartX = legendCenterX - (totalLegendWidth / 2);
+            
+            // Yellow Line legend item
+            const yellowX = legendStartX;
+            
+            // Draw yellow color box
+            tempCtx.fillStyle = '#FFD700';
+            tempCtx.fillRect(yellowX, legendY, 20, 20);
+            
+            // Draw yellow text and percentage
+            tempCtx.fillStyle = '#1e3c72';
+            tempCtx.font = '18px Arial';
+            tempCtx.textAlign = 'left';
+            tempCtx.fillText('Yellow Line ' + yellowPercentage + '%', yellowX + 30, legendY + 15);
+            
+            // Platform Edge legend item
+            const redX = yellowX + 140 + legendItemGap;
+            
+            // Draw red color box
+            tempCtx.fillStyle = '#FF4444';
+            tempCtx.fillRect(redX, legendY, 20, 20);
+            
+            // Draw red text and percentage
+            tempCtx.fillStyle = '#1e3c72';
+            tempCtx.font = '18px Arial';
+            tempCtx.textAlign = 'left';
+            tempCtx.fillText('Platform Edge ' + redPercentage + '%', redX + 30, legendY + 15);
+            
+            // Generate filename with timestamp
+            const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
+            const filename = `BreachBreakdownChart_${timestamp}.${format}`;
+            
+            // Convert to desired format and download
+            let mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
+            let quality = format === 'jpg' ? 0.9 : undefined;
+            
+            tempCanvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = filename;
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }, mimeType, quality);
+        }
+
+        function goBack() {
+            // In real implementation, this would navigate back to the main dashboard
+            // For now, we'll simulate going back
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                // Fallback: redirect to main dashboard or breach log
+                window.location.href = 'breach_log_fullview.html';
+            }
+        }
+
+        // Function to update chart with new data (called from main dashboard)
+        function updateChartData(yellowCount, platformCount) {
+            breachData.yellowLine = yellowCount;
+            breachData.platformEdge = platformCount;
+            
+            if (breachChart) {
+                const total = yellowCount + platformCount;
+                if (total > 0) {
+                    const yellowPercentage = Math.round((yellowCount / total) * 100);
+                    const redPercentage = Math.round((platformCount / total) * 100);
+                    
+                    // Update chart data
+                    breachChart.data.datasets[0].data = [yellowCount, platformCount];
+                    breachChart.update();
+                    
+                    // Update legend percentages
+                    document.getElementById('yellowPercentage').textContent = yellowPercentage + '%';
+                    document.getElementById('redPercentage').textContent = redPercentage + '%';
+                } else {
+                    // Handle case when no data
+                    breachChart.data.datasets[0].data = [0, 0];
+                    breachChart.update();
+                    document.getElementById('yellowPercentage').textContent = '0%';
+                    document.getElementById('redPercentage').textContent = '0%';
+                }
+            }
+        }
+
+        // Initialize the chart when page loads
+        document.addEventListener('DOMContentLoaded', initializeChart);
+
+        // Make functions available globally for external calls
+        window.updateChartData = updateChartData;
+    </script>
+</body>
+</html>

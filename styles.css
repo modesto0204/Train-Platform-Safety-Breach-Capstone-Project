@@ -66,6 +66,15 @@ body {
     justify-content: center; /* Add this */
 }
 
+.video-container:not(.has-video) #videoPlayer {
+    visibility: hidden;
+}
+
+.video-container:not(.has-video) #detectionCanvas,
+.video-container:not(.has-video) #zoneCanvas {
+    display: none;
+}
+
 #videoPlayer {
     width: 100%;
     height: 100%;
@@ -111,6 +120,74 @@ video::-webkit-media-controls-volume-slider {
     z-index: 2147483647 !important;
 }
 
+/* Fullscreen styles */
+.video-container:fullscreen {
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: none !important;
+    max-height: none !important;
+}
+
+.video-container:-webkit-full-screen {
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: none !important;
+    max-height: none !important;
+}
+
+.video-container:fullscreen #detectionCanvas,
+.video-container:fullscreen #zoneCanvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.video-container:-webkit-full-screen #detectionCanvas,
+.video-container:-webkit-full-screen #zoneCanvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Ensure video fills the container in fullscreen */
+.video-container:fullscreen #videoPlayer {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.video-container:-webkit-full-screen #videoPlayer {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Add to your styles.css */
+.video-container.is-fullscreen {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 9999 !important;
+    background: black;
+}
+
+.video-container.is-fullscreen #detectionCanvas,
+.video-container.is-fullscreen #zoneCanvas {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    display: block !important;
+    visibility: visible !important;
+}
+
+.video-container.is-fullscreen #videoPlayer {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
 .upload-area {
     position: absolute;
     top: 0;
@@ -129,6 +206,12 @@ video::-webkit-media-controls-volume-slider {
 
 .upload-area:hover {
     background-color: rgba(30, 58, 95, 0.98);
+}
+
+.upload-area:not(.hidden) {
+    display: flex !important;
+    z-index: 20 !important;
+    background-color: rgba(30, 58, 95, 1) !important; /* Full opacity */
 }
 
 .upload-area.hidden {
@@ -680,6 +763,17 @@ video::-webkit-media-controls-volume-slider {
     }
 }
 
+.alert-icon-enabled {
+    animation: bell-ring 1s ease-in-out infinite;
+}
+
+@keyframes bell-ring {
+    0%, 100% { transform: rotate(0deg); }
+    10%, 30% { transform: rotate(-10deg); }
+    20%, 40% { transform: rotate(10deg); }
+    50% { transform: rotate(0deg); }
+}
+
 .alert-text-enabled {
     font-family: 'Agrandir', 'Arial', sans-serif;
     font-weight: 900;
@@ -742,6 +836,16 @@ video::-webkit-media-controls-volume-slider {
     transform: translateY(0);
 }
 
+.dashboard-btn .nav-icon {
+    width: 42px !important;  /* Increase from 24px */
+    height: 42px !important;  /* Increase from 24px */
+    object-fit: ;
+}
+
+.dashboard-btn {
+    padding: 4px 12px !important;  /* Reduce vertical padding from 8px to 4px */
+}
+
 /* Icon styling */
 .nav-icon {
     width: 24px; /* Reduced from 28px */
@@ -752,4 +856,513 @@ video::-webkit-media-controls-volume-slider {
 /* Adjust main content to account for header */
 .main-content {
     margin-top: 35px; /* Reduced from 80px */
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    width: 90%;
+    height: 90%;
+    max-width: 1400px;
+    background: #0a1929;
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 30px;
+    background: rgba(15, 72, 147, 0.8);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-title {
+    font-family: 'Agrandir', 'Arial', sans-serif;
+    font-size: 32px;
+    font-weight: 900;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.modal-close {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 10px;
+    transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.modal-iframe {
+    flex: 1;
+    width: 100%;
+    border: none;
+}
+
+/* Chart Modal Specific Styles */
+.chart-modal-content {
+    width: 80%;  /* Reduced from 80% */
+    height: 80%; /* Reduced from 80% */
+    max-width: 600px; /* Reduced from 800px */
+    max-height: 600px; /* Reduced from 700px */
+}
+
+.modal-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px; /* Reduced from 40px */
+    background-color: rgba(42, 78, 124, 1);
+    background-image: url('assets/icons/panel_bg.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.modal-chart-container {
+    width: 200px;  /* Reduced from 300px */
+    height: 200px; /* Reduced from 300px */
+    margin-bottom: 20px; /* Reduced from 30px */
+    position: relative;
+}
+
+/* Ensure canvas respects container size */
+#modalBreachChart {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.modal-body.no-data .modal-chart-container {
+    opacity: 0.3;
+}
+
+.modal-body.no-data .modal-chart-legend {
+    opacity: 0.5;
+}
+
+.modal-chart-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 10px; /* Reduced from 15px */
+    margin-bottom: 20px; /* Reduced from 30px */
+    background: rgba(0, 0, 0, 0.2);
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.modal-chart-legend .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 16px; /* Reduced from 18px */
+    color: white;
+    font-family: 'Agrandir Regular', 'Arial', sans-serif;
+}
+
+.modal-chart-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+}
+
+.modal-actions {
+    flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.modal-actions .action-btn {
+    font-family: 'Agrandir', 'Arial', sans-serif;
+    font-weight: 900;
+    background: rgb(15, 72, 147);
+    border: none;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+}
+
+.modal-chart-legend .legend-dot {
+    width: 12px; /* Reduced from 14px */
+    height: 12px; /* Reduced from 14px */
+    border-radius: 50%;
+}
+
+/* Train Status Control */
+.train-status-control {
+    position: absolute;
+    top: 60px;  /* Position below camera selector */
+    left: 10px;  /* Align with camera selector */
+    z-index: 25;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 10px 15px;
+    border-radius: 4px;
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.train-status-control.active {
+    background: rgba(76, 175, 80, 0.9);
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 24px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+    background-color: #4CAF50;
+}
+
+input:checked + .toggle-slider:before {
+    transform: translateX(26px);
+}
+
+.train-status-label {
+    font-weight: 500;
+    margin-right: 5px;
+}
+
+.train-icon {
+    font-size: 20px;
+    color: white;
+}
+
+/* Boarding indicator in status bar */
+.status-bar.boarding-mode {
+    background-color: #2196F3 !important;
+}
+
+.boarding-indicator {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 15px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.boarding-indicator.active {
+    display: flex;
+}
+
+.boarding-indicator i {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Prediction Modal Styles */
+/* Prediction Modal - Match Original Design */
+.prediction-modal-content {
+    width: 95%;
+    max-width: 1400px;
+    height: 90vh;
+    max-height: 900px;
+    background-color: #0a1929;
+    background-image: url('assets/icons/main_bg.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.prediction-modal-content .modal-header {
+    background: transparent;
+    border-bottom: none;
+    padding: 20px 30px;
+}
+
+.prediction-modal-content .modal-body {
+    height: calc(100% - 80px);
+    overflow-y: auto;
+    padding: 20px 30px;
+    background: transparent;
+}
+
+/* Use the exact same styles from prediction-styles.css */
+.prediction-container-modal {
+    display: flex;
+    gap: 30px;
+    height: 100%;
+}
+
+.prediction-container-modal .left-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Current Status Card - Exact copy from original */
+.prediction-container-modal .current-status-card {
+    background: url('assets/icons/density_bg.png');
+    background-size: cover;
+    padding: 30px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    min-height: 250px;
+    min-width: 900px;
+}
+
+.prediction-container-modal .status-left {
+    position: relative;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 180px;
+    height: 150px;
+}
+
+.prediction-container-modal .crowd-image {
+    width: 200px;
+    height: 200px;
+    object-fit: contain;
+}
+
+.prediction-container-modal .status-left .percentage {
+    font-family: 'Agrandir', 'Arial', sans-serif;
+    font-size: 30px;
+    font-weight: 900;
+    position: absolute;
+    top: 80%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.prediction-container-modal .status-right h1 {
+    font-family: 'Agrandir', 'Arial', sans-serif;
+    font-size: 42px;
+    font-weight: 900;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-align: center;
+}
+
+.prediction-container-modal .platform-subtitle {
+    font-size: 18px;
+    margin-bottom: 10px;
+    opacity: 0.9;
+    text-align: center;
+}
+
+.prediction-container-modal .crowd-status {
+    font-family: 'Agrandir', 'Arial', sans-serif;
+    font-size: 30px;
+    font-weight: 900;
+    font-style: italic;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 0;
+    text-align: center;
+}
+
+/* Hourly Forecast - Match original */
+.prediction-container-modal .hourly-forecast {
+    background: url('assets/icons/prediction_bg.png');
+    background-size: cover;
+    padding: 20px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    flex: 1;
+}
+
+.prediction-container-modal .hourly-forecast h2 {
+    font-family: 'Agrandir', 'Arial', sans-serif;
+    font-size: 28px;
+    font-weight: 900;
+    text-align: center;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.prediction-container-modal .forecast-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+}
+
+.prediction-container-modal .forecast-card {
+    background: transparent;
+    border: 2px solid;
+    border-radius: 15px;
+    padding: 25px 15px;
+    text-align: center;
+    transition: all 0.3s ease;
+    min-height: 150px;
+}
+
+.prediction-container-modal .forecast-card .time {
+    font-family: 'Agrandir', 'Arial', sans-serif;
+    font-size: 22px;
+    font-weight: 900;
+    margin-bottom: 10px;
+}
+
+.prediction-container-modal .forecast-card .percentage {
+    font-family: 'Agrandir', 'Arial', sans-serif;
+    font-size: 40px;
+    font-weight: 900;
+    margin-bottom: 10px;
+}
+
+.prediction-container-modal .forecast-card .density {
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+/* Time Predictions - Match original */
+.prediction-container-modal .time-predictions {
+    width: 350px;
+    background-image: url('assets/icons/prediction_bg.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    border-radius: 20px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.prediction-container-modal .time-slot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 25px 30px;
+    background: transparent;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+}
+
+.prediction-container-modal .time-slot .time {
+    width: 120px; /* Fixed width to accommodate "Moderate" */
+    text-align: center;
+}
+
+.prediction-container-modal .time-slot .density-label {
+    width: 120px; /* Fixed width to accommodate "Moderate" */
+    text-align: center;
+}
+
+.prediction-container-modal .time-slot-icon {
+    width: 100px;
+    height: 100px;
+    object-fit: contain;
+    margin: 0 20px; /* Add consistent margins */
+}
+
+/* Color coding - same as original */
+.prediction-container-modal .forecast-card.low {
+    border-color: #4CAF50;
+    background: rgba(76, 175, 80, 0.2);
+}
+
+.prediction-container-modal .forecast-card.moderate {
+    border-color: #FFC107;
+    background: rgba(255, 193, 7, 0.2);
+}
+
+.prediction-container-modal .forecast-card.high {
+    border-color: #f44336;
+    background: rgba(244, 67, 54, 0.2);
+}
+
+/* Responsive for modal */
+@media (max-width: 1000px) {
+    .prediction-container-modal {
+        flex-direction: column;
+    }
+    
+    .prediction-container-modal .time-predictions {
+        width: 100%;
+        max-height: 300px;
+    }
+    
+    .prediction-container-modal .forecast-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }

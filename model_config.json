@@ -1,0 +1,9 @@
+{
+    "max_capacity": 40,
+    "model_version": "1.0",
+    "training_date": "2025-10-25",
+    "num_features": 45,
+    "best_iteration": 999,
+    "test_r2_score": 0.9999799728393555,
+    "test_rmse": 0.030367695865186214
+}

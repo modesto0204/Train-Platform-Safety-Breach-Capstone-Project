@@ -44,7 +44,7 @@
                         </div>
                         <div class="status-item">
                             <i class="fas fa-clock"></i>
-                            <span id="timestamp">2m 45s ago</span>
+                            <span id="timestamp">Safe</span>
                         </div>
                         <div class="status-item" id="alertStatusItem">
                             <i class="fas fa-bell alert-icon-disabled"></i>
@@ -115,17 +115,17 @@
                     <img src="assets/icons/platform_icon.png" alt="Platform" class="platform-icon">
                 </div>
                 <div class="stat-content">
-                    <h3>YELLOW LINE<br>BREACH</h3>
+                    <h3>PERSONS ON<br>YELLOW LINE</h3>
                     <p class="stat-number" id="yellowLineBreach">0</p>
                 </div>
             </div>
-            
+
             <div class="stat-card platform-edge-card">
                 <div class="stat-icon-container">
                     <img src="assets/icons/platform_icon.png" alt="Platform" class="platform-icon">
                 </div>
                 <div class="stat-content">
-                    <h3>PLATFORM EDGE<br>BREACH</h3>
+                    <h3>PERSONS ON<br>PLATFORM EDGE</h3>
                     <p class="stat-number" id="platformEdgeBreach">0</p>
                 </div>
             </div>
@@ -136,31 +136,170 @@
                 </div>
                 <div class="stat-content">
                     <h3>PASSENGER ON<br>PLATFORM COUNT</h3>
-                    <div class="stat-number" id="passengerCount">8</div>
+                    <div class="stat-number" id="passengerCount">0</div>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Navigation Header -->
-    <div class="nav-header">
-        <button class="nav-btn dashboard-btn" onclick="goToDashboard()">
-            <img src="assets/icons/dashboard_icon.png" alt="Dashboard" class="nav-icon">
-            <span>DASHBOARD</span>
+   <div class="nav-header">
+    <button class="nav-btn dashboard-btn active" onclick="goToDashboardd()">
+        <img src="assets/icons/dashboard_icon.png" alt="Dashboard" class="nav-icon">
+        <span>DETECTION DASHBOARD</span>
+    </button>
+    
+    <div class="nav-right">
+
+        <button class="nav-btn prediction-btn" onclick="goToPrediction()">
+        <img src="assets/icons/prediction_icon.png" alt="Prediction" class="nav-icon">
+        <span>PREDICTION</span>
+        </button>
+
+        <button class="nav-btn help-btn" onclick="showHelp()">
+            <img src="assets/icons/help_icon.png" alt="Help" class="nav-icon">
+            <span>HELP</span>
         </button>
         
-        <div class="nav-right">
-            <button class="nav-btn help-btn" onclick="showHelp()">
-                <img src="assets/icons/help_icon.png" alt="Help" class="nav-icon">
-                <span>HELP</span>
-            </button>
-            
-            <button class="nav-btn faq-btn" onclick="showFAQ()">
-                <img src="assets/icons/faq_icon.png" alt="FAQ" class="nav-icon">
-                <span>FAQ</span>
-            </button>
+        <button class="nav-btn faq-btn" onclick="showFAQ()">
+            <img src="assets/icons/faq_icon.png" alt="FAQ" class="nav-icon">
+            <span>FAQ</span>
+        </button>
+    </div>
+</div>
+
+    <!-- Add this modal to your index.html -->
+    <div id="breachLogModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">BREACH LOG</h2>
+                <button class="modal-close" onclick="closeBreachLogModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <iframe src="breach_log_fullview.html" class="modal-iframe"></iframe>
         </div>
     </div>
+
+    <div id="predictionModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content prediction-modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">CROWD PREDICTION DASHBOARD</h2>
+                <button class="modal-close" onclick="closePredictionModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="prediction-container-modal">
+                    <div class="left-section">
+                        <!-- Current Status Card -->
+                        <div class="current-status-card">
+                            <div class="status-left">
+                                <img src="assets/icons/green_low.png" alt="Low Crowd" class="crowd-image">
+                                <div class="percentage">20%</div>
+                            </div>
+                            <div class="status-right">
+                                <h1>CUBAO STATION</h1>
+                                <p class="platform-subtitle">Southbound Platform Crowd Forecast</p>
+                                <h2 class="crowd-status">Low Crowd Density</h2>
+                            </div>
+                        </div>
+
+                        <!-- Hourly Forecast -->
+                        <div class="hourly-forecast">
+                            <h2>HOURLY CROWD FORECAST</h2>
+                            <div class="forecast-cards">
+                                <div class="forecast-card low">
+                                    <div class="time">5 AM</div>
+                                    <div class="percentage">20%</div>
+                                    <div class="density">Low</div>
+                                </div>
+                                <div class="forecast-card moderate">
+                                    <div class="time">6 AM</div>
+                                    <div class="percentage">55%</div>
+                                    <div class="density">Moderate</div>
+                                </div>
+                                <div class="forecast-card high">
+                                    <div class="time">7 AM</div>
+                                    <div class="percentage">80%</div>
+                                    <div class="density">High</div>
+                                </div>
+                                <div class="forecast-card high">
+                                    <div class="time">8 AM</div>
+                                    <div class="percentage">90%</div>
+                                    <div class="density">High</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Time-based Predictions -->
+                    <div class="time-predictions">
+                        <div class="time-slot low">
+                            <span class="time">5 AM</span>
+                            <img src="assets/icons/green_low.png" alt="Low Crowd" class="time-slot-icon">
+                            <span class="density-label">Low</span>
+                        </div>
+                        <div class="time-slot moderate">
+                            <span class="time">6 AM</span>
+                            <img src="assets/icons/yellow_moderate.png" alt="Moderate Crowd" class="time-slot-icon">
+                            <span class="density-label">Moderate</span>
+                        </div>
+                        <div class="time-slot high">
+                            <span class="time">7 AM</span>
+                            <img src="assets/icons/red_high.png" alt="High Crowd" class="time-slot-icon">
+                            <span class="density-label">High</span>
+                        </div>
+                        <div class="time-slot high">
+                            <span class="time">8 AM</span>
+                            <img src="assets/icons/red_high.png" alt="High Crowd" class="time-slot-icon">
+                            <span class="density-label">High</span>
+                        </div>
+                        <div class="time-slot moderate">
+                            <span class="time">9 AM</span>
+                            <img src="assets/icons/yellow_moderate.png" alt="Moderate Crowd" class="time-slot-icon">
+                            <span class="density-label">Moderate</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add this breach breakdown modal after the breach log modal -->
+    <div id="breachChartModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content chart-modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">BREACH BREAKDOWN CHART</h2>
+            <button class="modal-close" onclick="closeBreachChartModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="modal-chart-wrapper">
+                <div class="modal-chart-container">
+                    <canvas id="modalBreachChart"></canvas>
+                </div>
+                <div class="modal-chart-legend">
+                    <div class="legend-item">
+                        <span class="legend-dot yellow"></span>
+                        <span>Yellow Line <span id="modalYellowPercentage">0%</span></span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot red"></span>
+                        <span>Platform Edge <span id="modalRedPercentage">0%</span></span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="action-btn export-btn" onclick="exportChartFromModal()">
+                    <i class="fas fa-download"></i> Export
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
     
     <script src="script.js"></script>
 </body>

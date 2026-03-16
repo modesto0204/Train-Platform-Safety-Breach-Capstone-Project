@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prediction Dashboard - Platform Safety System</title>
+    <link rel="stylesheet" href="prediction-styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation Header -->
+    <div class="nav-header">        
+        <button class="nav-btn prediction-btn" onclick="goToPrediction()">
+            <img src="assets/icons/prediction_icon.png" alt="Prediction" class="nav-icon">
+            <span>PREDICTION</span>
+        </button>
+        
+        <div class="nav-right">
+            <button class="nav-btn dashboard-btn" onclick="goToDashboard()">
+                <img src="assets/icons/dashboard_icon.png" alt="Dashboard" class="nav-icon">
+                <span>DETECTION DASHBOARD</span>
+            </button>
+
+            <button class="nav-btn help-btn" onclick="showHelp()">
+                <img src="assets/icons/help_icon.png" alt="Help" class="nav-icon">
+                <span>HELP</span>
+            </button>
+            
+            <button class="nav-btn faq-btn" onclick="showFAQ()">
+                <img src="assets/icons/faq_icon.png" alt="FAQ" class="nav-icon">
+                <span>FAQ</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="prediction-container">
+        <div class="left-section">
+            <!-- Current Status Card -->
+            <div class="current-status-card">
+                <div class="status-left">
+                    <img src="assets/icons/green_low.png" alt="Low Crowd" class="crowd-image">
+                    <div class="percentage">20%</div>
+                </div>
+                <div class="status-right">
+                    <h1>CUBAO STATION</h1>
+                    <p class="platform-subtitle">Southbound Platform Crowd Forecast</p>
+                    <h2 class="crowd-status">Low Crowd Density</h2>
+                </div>
+            </div>
+
+            <!-- Hourly Forecast -->
+            <div class="hourly-forecast">
+                <h2>HOURLY CROWD FORECAST</h2>
+                <div class="forecast-cards">
+                    <div class="forecast-card low">
+                        <div class="time">5 AM</div>
+                        <div class="percentage">20%</div>
+                        <div class="density">Low</div>
+                    </div>
+                    <div class="forecast-card moderate">
+                        <div class="time">6 AM</div>
+                        <div class="percentage">55%</div>
+                        <div class="density">Moderate</div>
+                    </div>
+                    <div class="forecast-card high">
+                        <div class="time">7 AM</div>
+                        <div class="percentage">80%</div>
+                        <div class="density">High</div>
+                    </div>
+                    <div class="forecast-card high">
+                        <div class="time">8 AM</div>
+                        <div class="percentage">90%</div>
+                        <div class="density">High</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Time-based Predictions -->
+        <div class="time-predictions">
+            <div class="time-slot low">
+                <span class="time">5 AM</span>
+                <img src="assets/icons/green_low.png" alt="Low Crowd" class="time-slot-icon">
+                <span class="density-label">Low</span>
+            </div>
+            <div class="time-slot moderate">
+                <span class="time">6 AM</span>
+                <img src="assets/icons/yellow_moderate.png" alt="Moderate Crowd" class="time-slot-icon">
+                <span class="density-label">Moderate</span>
+            </div>
+            <div class="time-slot high">
+                <span class="time">7 AM</span>
+                <img src="assets/icons/red_high.png" alt="High Crowd" class="time-slot-icon">
+                <span class="density-label">High</span>
+            </div>
+            <div class="time-slot high">
+                <span class="time">8 AM</span>
+                <img src="assets/icons/red_high.png" alt="High Crowd" class="time-slot-icon">
+                <span class="density-label">High</span>
+            </div>
+            <div class="time-slot moderate">
+                <span class="time">9 AM</span>
+                <img src="assets/icons/yellow_moderate.png" alt="Moderate Crowd" class="time-slot-icon">
+                <span class="density-label">Moderate</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
